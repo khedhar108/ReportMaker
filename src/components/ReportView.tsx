@@ -10,14 +10,14 @@ interface ReportViewProps {
 }
 
 export function ReportView({ rollNo, onBack }: ReportViewProps) {
-    const { students } = useApp();
+    const { students, examTitle } = useApp();
     const student = students.find((s) => s.rollNo === rollNo);
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
         if (!student || !iframeRef.current) return;
 
-        const html = generateReportHTML(student);
+        const html = generateReportHTML(student, examTitle);
         const iframe = iframeRef.current;
 
         // Write HTML directly to iframe
@@ -27,7 +27,7 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
             doc.write(html);
             doc.close();
         }
-    }, [student]);
+    }, [student, examTitle]);
 
     if (!student) {
         return <div className="flex items-center justify-center min-h-[400px] text-slate-400">Student not found</div>;
@@ -36,7 +36,7 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
     const startDownload = () => {
         if (!student) return;
 
-        const html = generateReportHTML(student);
+        const html = generateReportHTML(student, examTitle);
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -53,25 +53,28 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
             className="w-full pb-20"
         >
             {/* Preview mode Toolbar */}
-            <div className="flex items-center justify-between mb-6 sticky top-4 z-50 max-w-7xl mx-auto px-6">
-                <div className="flex items-center gap-4 bg-slate-900/90 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 shadow-2xl">
+            <div className="flex items-center justify-between mb-6 sticky top-4 z-50 max-w-6xl mx-auto px-6">
+                <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl border border-slate-200 shadow-sm">
                     <button
                         onClick={onBack}
-                        className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+                        className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
-                        <span className="font-medium">Back</span>
+                        <span className="font-bold text-sm uppercase tracking-wide">Back</span>
                     </button>
-                    <div className="w-px h-6 bg-white/20"></div>
-                    <div className="text-white font-bold text-sm">Live Preview</div>
+                    <div className="w-px h-6 bg-slate-200"></div>
+                    <div className="text-slate-800 font-black text-sm uppercase tracking-wider flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Review Report
+                    </div>
                 </div>
 
                 <button
                     onClick={startDownload}
-                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-full text-white font-bold shadow-2xl shadow-emerald-500/20 transition-all text-sm group"
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-white font-bold shadow-lg shadow-slate-900/20 transition-all text-sm group"
                 >
                     <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-                    Download HTML
+                    Download PDF / HTML
                 </button>
             </div>
 

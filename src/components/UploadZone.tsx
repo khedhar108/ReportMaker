@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, FileSpreadsheet, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseExcelFile } from '../utils/excelParser';
-import { analyzeWithGroq } from '../services/groqService';
+import { analyzeExcelData } from '../services/excelAnalysisService';
 import { useApp } from '../context/AppContext';
 
 interface UploadZoneProps {
@@ -52,8 +52,8 @@ export function UploadZone({ onSuccess }: UploadZoneProps) {
 
         try {
             const excelData = await parseExcelFile(file);
-            // Pass context to the service
-            const result = await analyzeWithGroq(settings.apiKey, settings.model, excelData, context);
+            // Use the specialized Excel Analysis service
+            const result = await analyzeExcelData(settings.apiKey, settings.model, excelData, context);
             setStudents(result.students, result.summary);
             onSuccess();
         } catch (err) {

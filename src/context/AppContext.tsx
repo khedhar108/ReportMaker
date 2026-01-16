@@ -28,6 +28,7 @@ interface AppState {
         avgScore: number;
     } | null;
     isLoading: boolean;
+    examTitle: string; // Dynamic exam title for reports
 }
 
 interface AppContextType extends AppState {
@@ -36,6 +37,7 @@ interface AppContextType extends AppState {
     setStudents: (data: StudentData[], summary: AppState['summary']) => void;
     clearData: () => void;
     setLoading: (loading: boolean) => void;
+    setExamTitle: (title: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -58,6 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             students: [],
             summary: null,
             isLoading: false,
+            examTitle: 'Talent Hunt Examination 2026', // Default exam title
         };
     });
 
@@ -86,8 +89,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setState(prev => ({ ...prev, isLoading }));
     };
 
+    const setExamTitle = (examTitle: string) => {
+        setState(prev => ({ ...prev, examTitle }));
+    };
+
     return (
-        <AppContext.Provider value={{ ...state, setApiKey, setModel, setStudents, clearData, setLoading }}>
+        <AppContext.Provider value={{ ...state, setApiKey, setModel, setStudents, clearData, setLoading, setExamTitle }}>
             {children}
         </AppContext.Provider>
     );

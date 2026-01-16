@@ -24,37 +24,92 @@ export function parseExcelFile(file: File): Promise<Record<string, unknown>[]> {
                 for (let i = 0; i < Math.min(rawData.length, 10); i++) {
                     const row = rawData[i];
                     const rowStr = row.join(' ').toLowerCase();
-                    if (rowStr.includes('name') || rowStr.includes('student') || rowStr.includes('roll')) {
+                    // Checking for typical header keywords
+                    if (rowStr.includes('name') || (rowStr.includes('roll') && rowStr.includes('no'))) {
                         headerRowIndex = i;
                         break;
                     }
                 }
 
-                // 2. Extract Data with found header
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                    header: headerRowIndex === 0 ? undefined : rawData[headerRowIndex], // If found, use as keys
-                    range: headerRowIndex // Start parsing from header row
-                });
+                // 2. Super Header Detection (Hierarchy support)
+                // Check if the row above the header contains grouping labels (e.g. "Part A", "Scholastic")
+                let finalHeaders: string[] = [];
+                const mainHeaderRow = rawData[headerRowIndex].map(String);
 
-                // 3. Post-Processing & Sanitization
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const sanitizedData = (jsonData as any[]).filter(row => {
-                    // Filter empty rows
-                    return Object.keys(row).length > 0;
-                }).map(row => {
-                    // Normalize keys: " Student Name " -> "student_name"
-                    const newRow: Record<string, unknown> = {};
-                    Object.keys(row).forEach(key => {
-                        const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-                        // Skip mostly empty keys or internal Excel artifacts
-                        if (cleanKey && cleanKey !== '__empty') {
-                            newRow[cleanKey] = row[key];
+                if (headerRowIndex > 0) {
+                    const superHeaderRow = rawData[headerRowIndex - 1]; // Row above
+                    // Check if superHeaderRow has *some* text content in it
+                    const hasSuperHeader = superHeaderRow && superHeaderRow.some(cell => cell && String(cell).trim().length > 0);
+
+                    if (hasSuperHeader) {
+                        // Forward Fill Logic for Merged Cells:
+                        // Excel export/parsing often leaves merged cells as [ "Value", null, null, "NextValue" ]
+                        // We fill the nulls with the previous value.
+                        const filledSuperHeaders: string[] = [];
+                        let lastValue = "";
+
+                        // We iterate up to the length of the main header row to match columns
+                        for (let k = 0; k < mainHeaderRow.length; k++) {
+                            const val = superHeaderRow[k];
+                            // If we find a new non-empty string, update lastValue
+                            if (val && String(val).trim()) {
+                                lastValue = String(val).trim();
+                            }
+                            // Otherwise check if it's strictly empty/null to apply forward fill
+                            // Note: standard parser puts null/undefined for merged gaps
+                            filledSuperHeaders.push(lastValue);
+                        }
+
+                        // Merge super header with main header
+                        finalHeaders = mainHeaderRow.map((h, idx) => {
+                            const prefix = filledSuperHeaders[idx];
+                            // Only prepend if prefix exists and isn't identical to the header (redundancy check)
+                            // and avoid prepending for common ID columns like "Roll No" if the super header is just "Student Details" or something generic
+                            if (prefix &&
+                                !h.toLowerCase().includes('name') &&
+                                !h.toLowerCase().includes('roll') &&
+                                !h.includes(prefix)) {
+                                return `${prefix} - ${h}`;
+                            }
+                            return h;
+                        });
+                    } else {
+                        finalHeaders = mainHeaderRow;
+                    }
+                } else {
+                    finalHeaders = mainHeaderRow;
+                }
+
+                // 3. Extract Data using the Custom Constructed Headers
+
+                const resultData = [];
+                // Start iterating from the row AFTER the header
+                for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+                    const row = rawData[i];
+                    if (!row || row.length === 0) continue;
+
+                    const rowObj: Record<string, unknown> = {};
+                    let hasData = false;
+
+                    // Map row values to our finalHeaders
+                    finalHeaders.forEach((header, colIdx) => {
+                        const cellValue = row[colIdx];
+                        if (header && cellValue !== undefined && cellValue !== null && String(cellValue).trim() !== '') {
+                            // Normalize key: keep it somewhat readable but clean
+                            // We need to keep "Part A - Objective" intact for the AI
+                            // So we just trim.
+                            const cleanKey = header.trim();
+                            rowObj[cleanKey] = cellValue;
+                            hasData = true;
                         }
                     });
-                    return newRow;
-                });
 
-                resolve(sanitizedData);
+                    if (hasData) {
+                        resultData.push(rowObj);
+                    }
+                }
+
+                resolve(resultData);
             } catch (error) {
                 reject(error);
             }

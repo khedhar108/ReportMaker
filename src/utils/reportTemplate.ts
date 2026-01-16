@@ -1,33 +1,38 @@
 import type { StudentData } from "../context/AppContext";
 
-export function generateReportHTML(student: StudentData): string {
+export function generateReportHTML(student: StudentData, examTitle: string = 'Talent Hunt Examination 2026'): string {
     const subjectNames = JSON.stringify(student.subjects.map(s => s.name));
     const subjectScores = JSON.stringify(student.subjects.map(s => Number(s.score))); // Ensure numbers
     // Use optional chaining and nullish coalescing for robust fallbacks
-    const objective = student.objectiveScore ?? Math.round(student.totalScore * 0.7);
-    const subjective = student.subjectiveScore ?? Math.round(student.totalScore * 0.3);
-    const totalPercentage = (Number(student.totalScore) || 0).toFixed(1);
+    // Logic: If objective and subjective are present, their sum IS the total. Override any mismatch.
+    const hasParts = student.objectiveScore !== undefined && student.subjectiveScore !== undefined;
+    const effectiveTotal = hasParts
+        ? (Number(student.objectiveScore) + Number(student.subjectiveScore))
+        : Number(student.totalScore);
+
+    // Explicitly update the student object for consistency in the UI below if needed (optional but good for debugging)
+    if (hasParts) student.totalScore = effectiveTotal;
+
+    const objective = student.objectiveScore ?? Math.round(effectiveTotal * 0.7);
+    const subjective = student.subjectiveScore ?? Math.round(effectiveTotal * 0.3);
+
+    const totalPercentage = (effectiveTotal || 0).toFixed(1);
     const numPercentage = Number(totalPercentage);
 
-    // Color Logic for Percentage
-    let scoreColor = 'text-green-500';
-    let strokeColor = 'stroke-green-500';
-    let ringColor = 'text-green-50'; // Background ring
+    // Motivational Logic
+    let motivationalEmoji = '🙂';
+    let motivationalText = 'Keep Smiling & Growing!';
+    let trophyClass = 'grayscale opacity-80'; // Default for lower scores
 
-    if (numPercentage < 40) {
-        scoreColor = 'text-red-500';
-        strokeColor = 'stroke-red-500';
-        ringColor = 'text-red-50';
-    } else if (numPercentage < 60) {
-        scoreColor = 'text-yellow-500';
-        strokeColor = 'stroke-yellow-500';
-        ringColor = 'text-yellow-50';
+    if (numPercentage >= 60) {
+        motivationalEmoji = '🏆';
+        motivationalText = 'Absolute Champion!';
+        trophyClass = 'drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]'; // Glowing Gold
+    } else if (numPercentage >= 40) {
+        motivationalEmoji = '🌟';
+        motivationalText = 'Rising Star!';
+        trophyClass = 'drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]'; // Subtle Gold
     }
-
-    // SVG Circle Calculations
-    const radius = 36;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (numPercentage / 100) * circumference;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -37,149 +42,197 @@ export function generateReportHTML(student: StudentData): string {
     <title>${student.name} - Performance Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { 
-                        primary: '#0F172A', 
-                        accent: '#F97316', 
-                        subtle: '#64748B', 
-                        bg: '#F1F5F9',
-                        success: '#10B981',
-                        'success-light': '#ECFDF5',
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
                     },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 
+                        glass: 'rgba(255, 255, 255, 0.1)',
+                    },
                     boxShadow: {
-                        'premium': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+                        'neon': '0 0 20px rgba(139, 92, 246, 0.3)',
+                        'gold': '0 0 25px rgba(234, 179, 8, 0.2)',
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #F8FAFC; color: #334155; }
+        body { background: #0f172a; color: #f8fafc; } /* Dark simplified theme for report */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .text-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .chart-container { position: relative; width: 100%; height: 350px; }
+        
         @media print {
-            body { background: white; -webkit-print-color-adjust: exact; }
-            .no-print { display: none; }
-            .shadow-premium { box-shadow: none !important; border: 1px solid #cbd5e1; }
-            canvas { max-height: 300px !important; }
+            body { background: white; color: black; }
+            .glass-card { 
+                background: white; 
+                border: 2px solid #e2e8f0; 
+                backdrop-filter: none;
+                box-shadow: none;
+                -webkit-print-color-adjust: exact;
+            }
+            .glass-panel { background: #f8fafc; border: 1px solid #e2e8f0; }
+            .text-glow { text-shadow: none; }
+            .print-invert { filter: invert(1); }
+            /* Force ensure unified card looks good on print */
+            .break-inside-avoid { break-inside: avoid; }
         }
     </style>
 </head>
-<body class="antialiased min-h-screen py-10 px-4">
+<body class="antialiased min-h-screen py-10 px-6 font-sans bg-slate-900">
 
-    <div class="max-w-6xl mx-auto space-y-8">
+    <div class="max-w-5xl mx-auto space-y-10">
         
-        <!-- Exam Header -->
-        <div class="text-center mb-[-20px] pt-4">
-             <div class="inline-block bg-white px-8 py-3 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Talent Hunt Examination 2026</h2>
-                <div class="h-1 w-20 bg-blue-600 mx-auto mt-2 rounded-full"></div>
+        <!-- EXAM HEADER (Restored) -->
+        <div class="text-center space-y-2">
+             <div class="inline-block px-6 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
+                <h2 class="text-xl md:text-2xl font-black text-white uppercase tracking-wider text-glow">${examTitle}</h2>
              </div>
         </div>
 
-        <!-- Identity Card (Central Focus) -->
-        <div class="bg-white rounded-3xl shadow-premium border border-slate-200 p-8 md:p-10 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+        <!-- UNIFIED MASTER CARD -->
+        <div class="glass-card rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 break-inside-avoid">
             
-            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
-                <!-- Name & Details with Avatar -->
-                <div class="flex items-center gap-6 flex-1">
-                    <!-- Student Avatar SVG -->
-                    <div class="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center shrink-0">
-                         <svg class="w-12 h-12 text-slate-400" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                        </svg>
-                    </div>
+            <!-- Top Section: Split Identity & Motivation -->
+            <div class="flex flex-col md:flex-row items-stretch">
+                
+                <!-- LEFT: 60% IDENTITY -->
+                <div class="w-full md:w-[60%] p-8 md:p-10 relative">
+                    <!-- Background Bloom -->
+                    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500/10 via-transparent to-transparent pointer-events-none"></div>
                     
+                    <div class="relative z-10 flex items-start gap-6">
+                        <!-- SVG Avatar (Restored) -->
+                        <div class="w-24 h-24 rounded-2xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center shrink-0 shadow-neon text-slate-400">
+                             <svg class="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+
+                        <div class="space-y-1 pt-1">
+                            <div class="flex items-center gap-3">
+                                <h1 class="text-4xl font-display font-black text-white tracking-tight uppercase">${student.name}</h1>
+                                <div class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/20 uppercase tracking-wide">Active</div>
+                            </div>
+                            
+                            <div class="flex flex-wrap items-center gap-6 mt-4 text-sm font-medium text-slate-300">
+                                <div>
+                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Roll Number</span>
+                                    <span class="font-mono text-white text-lg">${student.rollNo}</span>
+                                </div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div>
+                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Class</span>
+                                    <span class="font-mono text-white text-lg">${student.className || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: 40% MOTIVATION & SCORE (Merged) -->
+                <div class="w-full md:w-[40%] p-8 md:p-10 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-l border-white/5 relative flex flex-col items-center justify-center text-center">
+                    
+                    <!-- Score Display -->
+                    <div class="relative mb-4">
+                        <div class="text-5xl font-display font-black text-white tracking-tighter drop-shadow-lg">
+                            ${totalPercentage}%
+                        </div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Aggregate Score</div>
+                    </div>
+
+                    <!-- Emoji & Text -->
+                    <div class="space-y-2">
+                        <div class="${trophyClass} text-5xl md:text-6xl mb-2 filter drop-shadow-md select-none transform hover:scale-110 transition-transform duration-300">
+                            ${motivationalEmoji}
+                        </div>
+                        <h3 class="text-xl font-bold text-white leading-none">${motivationalText}</h3>
+                         <p class="text-xs font-medium text-slate-400">
+                             ${numPercentage >= 60 ? 'Outstanding!' : (numPercentage >= 40 ? 'Well done!' : 'Keep going!')}
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- BOTTOM: SUMMARY (Integrated) -->
+            <div class="border-t border-white/5 bg-white/[0.02] p-6 md:p-8">
+                <div class="flex items-start gap-4">
+                    <div class="mt-1 w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20">
+                         <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
                     <div>
-                        <h1 class="text-3xl font-extrabold text-slate-900 mb-1">${student.name}</h1>
-                        <div class="text-slate-500 font-medium text-sm mb-3 flex items-center gap-2">
-                            <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600">Roll No: ${student.rollNo}</span>
-                            <span>•</span>
-                            <span>Grade {student.className || '10'}</span>
-                        </div>
-                        <div class="inline-block bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
-                            <span class="text-blue-700 font-bold text-[10px] uppercase tracking-wider">Academic Standing: High Potential</span>
-                        </div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Performance Summary</h4>
+                        <p class="text-slate-300 leading-relaxed text-sm md:text-base font-medium">
+                            ${student.remarks || `${student.name} has shown consistent effort tailored to their grade level. With continued focus on their identified growth areas, they can achieve even greater potential in future assessments.`}
+                        </p>
                     </div>
                 </div>
-
-                <!-- Circular Percentage Score -->
-                <div class="relative w-32 h-32 flex items-center justify-center">
-                    <!-- Background Circle -->
-                    <svg class="w-full h-full transform -rotate-90">
-                        <circle
-                            cx="64"
-                            cy="64"
-                            r="${radius}"
-                            stroke="currentColor"
-                            stroke-width="8"
-                            fill="transparent"
-                            class="text-slate-100"
-                        />
-                        <!-- Progress Circle -->
-                        <circle
-                            cx="64"
-                            cy="64"
-                            r="${radius}"
-                            stroke="currentColor"
-                            stroke-width="8"
-                            fill="transparent"
-                            stroke-dasharray="${circumference}"
-                            stroke-dashoffset="${strokeDashoffset}"
-                            stroke-linecap="round"
-                            class="${strokeColor} transition-all duration-1000 ease-out"
-                        />
-                    </svg>
-                    <!-- Percentage Text -->
-                    <div class="absolute inset-0 flex items-center justify-center flex-col">
-                        <span class="text-3xl font-black ${scoreColor}">${totalPercentage}%</span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Total</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Score Blocks (Objective / Subjective) -->
-            <div class="grid grid-cols-2 gap-4 max-w-2xl mt-8">
-                <div class="bg-slate-50 rounded-xl p-5 text-center border border-slate-100">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">OBJECTIVE</div>
-                    <div class="text-2xl font-bold text-blue-600">${objective} <span class="text-sm text-slate-400 font-medium">/ 70</span></div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-5 text-center border border-slate-100">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">SUBJECTIVE</div>
-                    <div class="text-2xl font-bold text-orange-600">${subjective} <span class="text-sm text-slate-400 font-medium">/ 30</span></div>
-                </div>
-            </div>
-
-            <!-- Full-Width Summary -->
-            <div class="mt-8 pt-8 border-t border-slate-100">
-                <p class="text-slate-600 leading-7 text-lg font-medium">
-                    ${student.remarks || `${student.name} demonstrates a solid grasp of fundamental concepts, particularly in objective assessments. The performance indicates strong aptitude in core areas. ${student.name} demonstrates good conceptual clarity and problem-solving skills, with specific opportunities for growth in complex application.`}
-                </p>
             </div>
         </div>
+
+        <!-- Score Breakdown (Floating Tiles) -->
+        ${(student.objectiveScore !== undefined && student.subjectiveScore !== undefined) ? `
+        <div class="grid grid-cols-2 gap-6">
+            <div class="glass-panel rounded-2xl p-5 flex items-center justify-between group hover:bg-white/5 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    </div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Objective</span>
+                </div>
+                <span class="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">${student.objectiveScore}</span>
+            </div>
+             <div class="glass-panel rounded-2xl p-5 flex items-center justify-between group hover:bg-white/5 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Subjective</span>
+                </div>
+                <span class="text-2xl font-black text-white group-hover:text-purple-400 transition-colors">${student.subjectiveScore}</span>
+            </div>
+        </div>` : ''}
 
         <!-- Charts Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            <!-- Assessment Composition -->
-            <div class="bg-white rounded-3xl shadow-premium border border-slate-200 p-8">
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Assessment Composition</h3>
-                <p class="text-sm text-slate-500 mb-6 w-3/4">Comparing ${student.name}'s performance in multiple-choice reasoning versus expressive writing.</p>
-                
-                <div class="chart-container">
-                    <canvas id="compositionChart"></canvas>
-                </div>
+            <!-- Slot 1: Composition OR Subject Bar Chart -->
+            <div class="glass-card rounded-3xl p-8">
+                ${hasParts ? `
+                    <h3 class="text-xl font-bold text-white mb-2">Assessment Composition</h3>
+                    <p class="text-sm text-slate-400 mb-6 w-3/4">Comparing ${student.name}'s performance in multiple-choice reasoning versus expressive writing.</p>
+                    <div class="chart-container">
+                        <canvas id="compositionChart"></canvas>
+                    </div>
+                ` : `
+                    <h3 class="text-xl font-bold text-white mb-2">Subject-Wise Scoring Breakdown</h3>
+                    <p class="text-sm text-slate-400 mb-6 w-3/4">Direct percentage comparison across all subjects.</p>
+                    <div class="chart-container">
+                        <canvas id="subjectBarChart"></canvas>
+                    </div>
+                `}
             </div>
 
-            <!-- Subject Mastery Map -->
-            <div class="bg-white rounded-3xl shadow-premium border border-slate-200 p-8">
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Subject Mastery Map</h3>
-                <p class="text-sm text-slate-500 mb-6">Subject proficiency profile.</p>
+            <!-- Slot 2: Subject Mastery Map (Radar) -->
+            <div class="glass-card rounded-3xl p-8">
+                <h3 class="text-xl font-bold text-white mb-2">Subject Mastery Map</h3>
+                <p class="text-sm text-slate-400 mb-6">Subject proficiency profile.</p>
                 
                 <div class="chart-container flex items-center justify-center">
                     <canvas id="radarChart"></canvas>
@@ -188,17 +241,17 @@ export function generateReportHTML(student: StudentData): string {
         </div>
 
         <!-- Insights -->
-        <div class="bg-white rounded-3xl shadow-premium border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50/50 p-8 border-b border-slate-100">
-                 <h3 class="text-2xl font-bold text-blue-600">Performance Insights & Recommendations</h3>
+        <div class="glass-card rounded-3xl overflow-hidden">
+            <div class="bg-white/5 p-8 border-b border-white/5">
+                 <h3 class="text-2xl font-bold text-blue-400">Performance Insights & Recommendations</h3>
             </div>
             
             <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
                 <!-- Key Strengths -->
                 <div>
-                     <div class="flex items-center gap-3 mb-6 p-3 bg-success-light rounded-lg w-fit">
+                     <div class="flex items-center gap-3 mb-6 p-3 bg-emerald-500/10 rounded-lg w-fit border border-emerald-500/20">
                         <span class="text-2xl">🧠</span> 
-                        <h4 class="font-bold text-teal-800 text-lg">Key Strengths</h4>
+                        <h4 class="font-bold text-emerald-400 text-lg">Key Strengths</h4>
                      </div>
                      <div class="space-y-6">
                         ${(student.strengths || ['Exceptional IT Recall: Scored 10/10. Correctly identified CPU types.', 'General Awareness: 87% in GK.', 'Mathematical Logic: 80% with strong geometry skills.']).map(s => {
@@ -208,12 +261,12 @@ export function generateReportHTML(student: StudentData): string {
 
         return `
                             <div class="flex gap-4">
-                                <div class="w-8 h-8 rounded-md bg-success-light flex items-center justify-center shrink-0 mt-0.5">
-                                    <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                <div class="w-8 h-8 rounded-md bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20">
+                                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
                                 <div>
-                                    ${title ? `<div class="font-bold text-slate-800 text-base mb-1">${title}:</div>` : ''}
-                                    <div class="text-slate-600 text-sm leading-relaxed">${desc}</div>
+                                    ${title ? `<div class="font-bold text-slate-200 text-base mb-1">${title}:</div>` : ''}
+                                    <div class="text-slate-400 text-sm leading-relaxed">${desc}</div>
                                 </div>
                             </div>`;
     }).join('')}
@@ -222,19 +275,19 @@ export function generateReportHTML(student: StudentData): string {
 
                 <!-- Growth Plan -->
                  <div>
-                     <div class="flex items-center gap-3 mb-6 p-3 bg-orange-50 rounded-lg w-fit">
+                     <div class="flex items-center gap-3 mb-6 p-3 bg-orange-500/10 rounded-lg w-fit border border-orange-500/20">
                         <span class="text-2xl">🌱</span>
-                        <h4 class="font-bold text-orange-800 text-lg">Areas for Growth</h4>
+                        <h4 class="font-bold text-orange-400 text-lg">Areas for Growth</h4>
                      </div>
                      <div class="space-y-6">
                         ${(student.growthPlan || [{ priority: "Concept Review", description: "Review core concepts" }]).map(g =>
         `<div class="flex gap-4">
-                                <div class="w-8 h-8 rounded-md bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
-                                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                <div class="w-8 h-8 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-orange-500/20">
+                                    <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                                 </div>
                                 <div>
-                                    <div class="font-bold text-slate-800 text-base mb-1">${g.priority}:</div>
-                                    <div class="text-slate-600 text-sm leading-relaxed">${g.description}</div>
+                                    <div class="font-bold text-slate-200 text-base mb-1">${g.priority}:</div>
+                                    <div class="text-slate-400 text-sm leading-relaxed">${g.description}</div>
                                 </div>
                             </div>`
     ).join('')}
@@ -243,7 +296,7 @@ export function generateReportHTML(student: StudentData): string {
             </div>
         </div>
         
-        <footer class="text-center text-slate-400 text-xs py-8">
+        <footer class="text-center text-slate-600 text-xs py-8">
             Generated by MG Global School AI Engine
         </footer>
 
@@ -252,34 +305,72 @@ export function generateReportHTML(student: StudentData): string {
     <script>
         const subjects = ${subjectNames};
         const scores = ${subjectScores};
+        const hasParts = ${hasParts};
         
         Chart.defaults.font.family = 'Inter';
-        Chart.defaults.color = '#64748b';
+        Chart.defaults.color = '#94a3b8'; // Slate-400 for dark mode
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
         // Explicitly enable interactivity defaults
         Chart.defaults.interaction.mode = 'nearest';
         Chart.defaults.interaction.intersect = false;
         Chart.defaults.plugins.tooltip.enabled = true;
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+        Chart.defaults.plugins.tooltip.titleColor = '#f8fafc';
+        Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
+        Chart.defaults.plugins.tooltip.borderColor = 'rgba(255, 255, 255, 0.1)';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
 
-        // 1. Composition (Blue/Orange Stacked)
-        new Chart(document.getElementById('compositionChart'), {
-            type: 'bar',
-            data: {
-                labels: ['${student.name}'],
-                datasets: [
-                    { label: 'Objective', data: [${objective}], backgroundColor: '#2563EB', barThickness: 100, borderRadius: 4 },
-                    { label: 'Subjective', data: [${subjective}], backgroundColor: '#F97316', barThickness: 100, borderRadius: 4 }
-                ]
-            },
-            options: {
-                hover: { mode: 'nearest', intersect: false },
-                scales: { 
-                    y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' } },
-                    x: { grid: { display: false } }
+        if (hasParts && document.getElementById('compositionChart')) {
+            // 1. Composition (Blue/Orange Stacked)
+            new Chart(document.getElementById('compositionChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['${student.name}'],
+                    datasets: [
+                        { label: 'Objective', data: [${objective}], backgroundColor: '#3b82f6', barThickness: 100, borderRadius: 4 },
+                        { label: 'Subjective', data: [${subjective}], backgroundColor: '#f97316', barThickness: 100, borderRadius: 4 }
+                    ]
                 },
-                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
-                maintainAspectRatio: false
-            }
-        });
+                options: {
+                    hover: { mode: 'nearest', intersect: false },
+                    scales: { 
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, color: '#94a3b8' } } },
+                    maintainAspectRatio: false
+                }
+            });
+        } else if (document.getElementById('subjectBarChart')) {
+            // 1b. Subject Bar Chart (Fallback for missing Objective/Subjective)
+            new Chart(document.getElementById('subjectBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [{
+                        label: 'Performance (%)',
+                        data: scores,
+                        backgroundColor: (ctx) => {
+                            const val = ctx.raw;
+                            if (val >= 90) return '#3b82f6'; // Blue
+                            return '#14b8a6'; // Teal
+                        },
+                        borderRadius: 6,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    indexAxis: 'x',
+                    hover: { mode: 'nearest', intersect: false },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } },
+                    maintainAspectRatio: false
+                }
+            });
+        }
 
         // 2. Radar (Teal)
         new Chart(document.getElementById('radarChart'), {
@@ -289,12 +380,12 @@ export function generateReportHTML(student: StudentData): string {
                 datasets: [{
                     label: 'Score',
                     data: scores,
-                    borderColor: '#14B8A6', // Teal 500
-                    backgroundColor: 'rgba(20, 184, 166, 0.2)', // Teal 500 / 0.2
-                    pointBackgroundColor: '#14B8A6',
-                    pointBorderColor: '#fff',
+                    borderColor: '#2dd4bf', // Teal 400
+                    backgroundColor: 'rgba(45, 212, 191, 0.1)', // Teal 400 / 0.1
+                    pointBackgroundColor: '#2dd4bf',
+                    pointBorderColor: '#0f172a',
                     pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#14B8A6',
+                    pointHoverBorderColor: '#2dd4bf',
                     borderWidth: 2,
                     pointRadius: 4
                 }]
@@ -306,8 +397,9 @@ export function generateReportHTML(student: StudentData): string {
                         suggestedMin: 0, 
                         suggestedMax: 100, 
                         ticks: { display: false, stepSize: 20 },
-                        grid: { color: '#e2e8f0' },
-                        pointLabels: { font: { size: 11, weight: '600' }, color: '#475569' }
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: { font: { size: 11, weight: '600' }, color: '#94a3b8' },
+                        angleLines: { color: 'rgba(255, 255, 255, 0.05)' }
                     } 
                 },
                 plugins: { legend: { display: false } },

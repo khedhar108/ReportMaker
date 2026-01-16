@@ -4,7 +4,7 @@ import { Users, Trophy, BarChart3, Download, PlusCircle, PenLine, Loader2 } from
 import { useApp } from '../context/AppContext';
 import { StudentCard } from './StudentCard';
 import { ManualEntryForm } from './ManualEntryForm';
-import { analyzeWithGroq } from '../services/groqService';
+import { analyzeManualEntry } from '../services/manualEntryService';
 import { generateReportHTML } from '../utils/reportTemplate';
 import JSZip from 'jszip';
 
@@ -15,7 +15,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardProps) {
-    const { students, summary, setStudents, settings, setLoading } = useApp();
+    const { students, summary, setStudents, settings, setLoading, examTitle } = useApp();
     const [isManualEntry, setIsManualEntry] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -72,9 +72,8 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
         setLoading(true);
 
         try {
-            // Pass specific context to hint AI that this is structured data
-            const context = "Process this pre-structured hierarchical JSON data. Preserve the structure and calculate scores.";
-            const result = await analyzeWithGroq(settings.apiKey, settings.model, data, context);
+            // Use the specialized Manual Entry service
+            const result = await analyzeManualEntry(settings.apiKey, settings.model, data);
 
             setStudents(result.students, result.summary);
             setIsManualEntry(false);
@@ -93,9 +92,9 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
 
         const zip = new JSZip();
 
-        // Generate HTML for each student
+        // Generate HTML for each student with custom exam title
         students.forEach(student => {
-            const html = generateReportHTML(student);
+            const html = generateReportHTML(student, examTitle);
             const fileName = `${student.name.replace(/\s+/g, '_')}_Report.html`;
             zip.file(fileName, html);
         });
