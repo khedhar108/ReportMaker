@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* 
+ * ReportMaker Design Tokens
+ * Custom CSS variables for our glassmorphism theme
+ */
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --accent: #6366f1;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, sans-serif;
+}
