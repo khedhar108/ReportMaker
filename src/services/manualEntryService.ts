@@ -55,32 +55,40 @@ An array of student objects. Each object has:
 - \`academicPerformance\`: A hierarchy of Categories -> Subjects.
     - Each category (e.g., "Scholastic", "Objective") contains subjects.
     - Each subject has: { name: string, marks: string|number, maxMarks: string|number }.
-    - Categories may have a "totalMaxMarks" field for the sum of their child subjects.
 
 **YOUR TASK:**
-1.  **Flatten all subjects** from all categories into a single list for each student.
-2.  **Calculate Percentage** for each subject: (marks / maxMarks) * 100. Round to 1 decimal.
-3.  **Calculate Total Score**: (Sum of all marks / Sum of all maxMarks) * 100. Round to 1 decimal.
+1.  **Extract Custom Attributes**: Any unknown fields in \`studentProfile\` (excluding name, rollNo, Class) must be moved to a \`customAttributes\` object (key-value strings).
+2.  **Flatten Subjects with Hierarchy**: Create a single list of subjects. For each subject, include:
+    - \`name\`: Subject name
+    - \`category\`: Parent category name (e.g., "Objective")
+    - \`marks\`: The RAW marks obtained (number)
+    - \`maxMarks\`: The maximum possible marks (number)
+    - \`score\`: PERCENTAGE calculated as (marks / maxMarks) * 100, rounded to 1 decimal. MUST be 0-100.
+3.  **Calculate Total Score**: (Sum of all marks / Sum of all maxMarks) * 100. Round to 1 decimal. MUST be 0-100.
 4.  **Assign Grade**: A >= 75%, B >= 60%, C >= 45%, D < 45%.
-5.  **Generate Remarks**: A 2-3 line constructive summary mentioning specific subject performance.
-6.  **Generate Strengths**: 1-2 detailed sentences (15-20 words each) on their strong areas.
-7.  **Generate Growth Plan**: 1-2 specific, actionable recommendations.
+5.  **Generate Remarks**: A 2-3 line constructive summary.
+6.  **Generate Strengths**: 1-2 detailed sentences.
+7.  **Generate Growth Plan**: 1-2 actionable recommendations.
 
-**OUTPUT RULES:**
+**CRITICAL OUTPUT RULES:**
+- \`score\` in subjects array MUST ALWAYS be a percentage (0-100), NOT raw marks.
+- \`marks\` in subjects array MUST be the raw marks obtained.
+- \`maxMarks\` in subjects array MUST be the maximum possible marks.
 - Output ONLY a valid JSON object. No text, markdown, or backticks.
-- Use this exact schema:
+- Use this schema:
 {
   "summary": { "totalStudents": number, "topPerformer": string, "avgScore": number },
   "gradeDistribution": { "A": number, "B": number, "C": number, "D": number },
-  "subjectPerformance": { "<SubjectName>": number (class average %) },
+  "subjectPerformance": { "<SubjectName>": number },
   "students": [
     {
       "rollNo": string,
       "name": string,
       "className": string,
+      "customAttributes": { "key": "value" },
       "grade": string,
       "totalScore": number,
-      "subjects": [{ "name": string, "score": number, "maxMarks": number }],
+      "subjects": [{ "name": string, "score": number, "marks": number, "maxMarks": number, "category": string }],
       "remarks": string,
       "strengths": [string],
       "growthPlan": [{ "priority": string, "description": string }]
@@ -89,9 +97,12 @@ An array of student objects. Each object has:
 }`;
 
     const userMessage = `Analyze the following pre-structured student data and generate the report JSON.
-IMPORTANT: Perform all calculations. Output final numbers, NOT expressions.
-All "score" values in the subjects array should be percentages (0-100).
-Include ALL subjects from ALL categories for each student.
+CRITICAL REMINDERS:
+- "score" in subjects MUST be a PERCENTAGE (0-100), calculated as (marks/maxMarks)*100.
+- "marks" MUST be the raw marks obtained.
+- "maxMarks" MUST be the maximum possible marks for that subject.
+- Map any extra fields in studentProfile (like Phone, Father Name) to "customAttributes".
+- Ensure every subject object in the output has a "category" field deriving from its parent in "academicPerformance".
 
 Input Data:
 ${JSON.stringify(studentsData, null, 2)}`;

@@ -10,8 +10,9 @@ export interface StudentData {
     name: string;
     grade: string;
     className?: string;
+    customAttributes?: Record<string, string>;
     totalScore: number;
-    subjects: { name: string; score: number }[];
+    subjects: { name: string; score: number; marks?: number; category?: string; maxMarks?: number }[];
     remarks?: string;
     strengths?: string[];
     growthPlan?: { priority: string; description: string }[];

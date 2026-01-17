@@ -1,38 +1,66 @@
 import type { StudentData } from "../context/AppContext";
 
 export function generateReportHTML(student: StudentData, examTitle: string = 'Talent Hunt Examination 2026'): string {
+    // --- Color Palette for Categories ---
+    const CATEGORY_COLORS = ['#3b82f6', '#f97316', '#a855f7', '#10b981', '#ef4444', '#eab308'];
+
+    // --- Aggregation Logic for Categories (with Color Mapping) ---
+    const categories: Record<string, { totalScore: number; totalMarks: number; totalMaxMarks: number; count: number; color: string }> = {};
+    let colorIndex = 0;
+    student.subjects.forEach(s => {
+        const cat = s.category || 'General';
+        if (!categories[cat]) {
+            categories[cat] = { totalScore: 0, totalMarks: 0, totalMaxMarks: 0, count: 0, color: CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length] };
+            colorIndex++;
+        }
+        categories[cat].totalScore += Number(s.score) || 0;
+        categories[cat].totalMarks += Number(s.marks) || 0;
+        categories[cat].totalMaxMarks += Number(s.maxMarks) || 0;
+        categories[cat].count += 1;
+    });
+
+    const categoryLabels = Object.keys(categories);
+    const categoryScores = categoryLabels.map(cat => Math.round(categories[cat].totalScore / categories[cat].count));
+    const categoryTotalMarks = categoryLabels.map(cat => categories[cat].totalMarks);
+    const categoryTotalMaxMarks = categoryLabels.map(cat => categories[cat].totalMaxMarks);
+    const categoryColorsArray = categoryLabels.map(cat => categories[cat].color);
+
+    // --- Subject Data (with Category Color Matching) ---
     const subjectNames = JSON.stringify(student.subjects.map(s => s.name));
-    const subjectScores = JSON.stringify(student.subjects.map(s => Number(s.score))); // Ensure numbers
-    // Use optional chaining and nullish coalescing for robust fallbacks
-    // Logic: If objective and subjective are present, their sum IS the total. Override any mismatch.
-    const hasParts = student.objectiveScore !== undefined && student.subjectiveScore !== undefined;
-    const effectiveTotal = hasParts
-        ? (Number(student.objectiveScore) + Number(student.subjectiveScore))
-        : Number(student.totalScore);
+    const subjectScores = JSON.stringify(student.subjects.map(s => Number(s.score) || 0));
+    const subjectMarks = JSON.stringify(student.subjects.map(s => Number(s.marks) || 0));
+    const subjectMaxMarks = JSON.stringify(student.subjects.map(s => Number(s.maxMarks) || 0));
+    const subjectColors = JSON.stringify(student.subjects.map(s => categories[s.category || 'General']?.color || '#14b8a6'));
 
-    // Explicitly update the student object for consistency in the UI below if needed (optional but good for debugging)
-    if (hasParts) student.totalScore = effectiveTotal;
-
-    const objective = student.objectiveScore ?? Math.round(effectiveTotal * 0.7);
-    const subjective = student.subjectiveScore ?? Math.round(effectiveTotal * 0.3);
-
-    const totalPercentage = (effectiveTotal || 0).toFixed(1);
+    // Fallback logic for Total Score if not provided
+    const effectiveTotal = student.totalScore || 0;
+    const totalPercentage = (effectiveTotal).toFixed(1);
     const numPercentage = Number(totalPercentage);
 
     // Motivational Logic
     let motivationalEmoji = '🙂';
     let motivationalText = 'Keep Smiling & Growing!';
-    let trophyClass = 'grayscale opacity-80'; // Default for lower scores
+    let trophyClass = 'grayscale opacity-80';
 
     if (numPercentage >= 60) {
         motivationalEmoji = '🏆';
         motivationalText = 'Absolute Champion!';
-        trophyClass = 'drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]'; // Glowing Gold
+        trophyClass = 'drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]';
     } else if (numPercentage >= 40) {
         motivationalEmoji = '🌟';
         motivationalText = 'Rising Star!';
-        trophyClass = 'drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]'; // Subtle Gold
+        trophyClass = 'drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]';
     }
+
+    // Custom Attributes Badges HTML
+    const customAttributesHtml = student.customAttributes
+        ? Object.entries(student.customAttributes).map(([key, value]) => `
+            <div class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">${key}</span>
+                <span class="text-sm font-bold text-white">${value}</span>
+            </div>
+        `).join('')
+        : '';
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -75,7 +103,8 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .text-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .chart-container { position: relative; width: 100%; height: 350px; }
+        .chart-container { position: relative; width: 100%; height: 300px; }
+        .chart-container-lg { position: relative; width: 100%; height: 400px; }
         
         @media print {
             body { background: white; color: black; }
@@ -96,9 +125,9 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
 </head>
 <body class="antialiased min-h-screen py-10 px-6 font-sans bg-slate-900">
 
-    <div class="max-w-5xl mx-auto space-y-10">
+    <div class="max-w-5xl mx-auto space-y-8">
         
-        <!-- EXAM HEADER (Restored) -->
+        <!-- EXAM HEADER -->
         <div class="text-center space-y-2">
              <div class="inline-block px-6 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
                 <h2 class="text-xl md:text-2xl font-black text-white uppercase tracking-wider text-glow">${examTitle}</h2>
@@ -117,35 +146,45 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
                     <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500/10 via-transparent to-transparent pointer-events-none"></div>
                     
                     <div class="relative z-10 flex items-start gap-6">
-                        <!-- SVG Avatar (Restored) -->
+                        <!-- SVG Avatar -->
                         <div class="w-24 h-24 rounded-2xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center shrink-0 shadow-neon text-slate-400">
                              <svg class="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                             </svg>
                         </div>
 
-                        <div class="space-y-1 pt-1">
-                            <div class="flex items-center gap-3">
-                                <h1 class="text-4xl font-display font-black text-white tracking-tight uppercase">${student.name}</h1>
-                                <div class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/20 uppercase tracking-wide">Active</div>
-                            </div>
-                            
-                            <div class="flex flex-wrap items-center gap-6 mt-4 text-sm font-medium text-slate-300">
-                                <div>
-                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Roll Number</span>
-                                    <span class="font-mono text-white text-lg">${student.rollNo}</span>
+                        <div class="space-y-4 w-full">
+                            <div>
+                                <div class="flex items-center gap-3">
+                                    <h1 class="text-4xl font-display font-black text-white tracking-tight uppercase">${student.name}</h1>
+                                    <div class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/20 uppercase tracking-wide">Active</div>
                                 </div>
-                                <div class="w-px h-8 bg-white/10"></div>
-                                <div>
-                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Class</span>
-                                    <span class="font-mono text-white text-lg">${student.className || 'N/A'}</span>
+                                
+                                <div class="flex flex-wrap items-center gap-6 mt-2 text-sm font-medium text-slate-300">
+                                    <div>
+                                        <span class="block text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Roll Number</span>
+                                        <span class="font-mono text-white text-lg">${student.rollNo}</span>
+                                    </div>
+                                    <div class="w-px h-8 bg-white/10"></div>
+                                    <div>
+                                        <span class="block text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Class</span>
+                                        <span class="font-mono text-white text-lg">${student.className || 'N/A'}</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Custom Attributes Badges (New Area) -->
+                            ${customAttributesHtml ? `
+                            <div class="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                                ${customAttributesHtml}
+                            </div>
+                            ` : ''}
+
                         </div>
                     </div>
                 </div>
 
-                <!-- RIGHT: 40% MOTIVATION & SCORE (Merged) -->
+                <!-- RIGHT: 40% MOTIVATION & SCORE -->
                 <div class="w-full md:w-[40%] p-8 md:p-10 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-l border-white/5 relative flex flex-col items-center justify-center text-center">
                     
                     <!-- Score Display -->
@@ -170,7 +209,7 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
 
             </div>
 
-            <!-- BOTTOM: SUMMARY (Integrated) -->
+            <!-- BOTTOM: SUMMARY -->
             <div class="border-t border-white/5 bg-white/[0.02] p-6 md:p-8">
                 <div class="flex items-start gap-4">
                     <div class="mt-1 w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20">
@@ -186,47 +225,16 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
             </div>
         </div>
 
-        <!-- Score Breakdown (Floating Tiles) -->
-        ${(student.objectiveScore !== undefined && student.subjectiveScore !== undefined) ? `
-        <div class="grid grid-cols-2 gap-6">
-            <div class="glass-panel rounded-2xl p-5 flex items-center justify-between group hover:bg-white/5 transition-colors">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                    </div>
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Objective</span>
-                </div>
-                <span class="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">${student.objectiveScore}</span>
-            </div>
-             <div class="glass-panel rounded-2xl p-5 flex items-center justify-between group hover:bg-white/5 transition-colors">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    </div>
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Subjective</span>
-                </div>
-                <span class="text-2xl font-black text-white group-hover:text-purple-400 transition-colors">${student.subjectiveScore}</span>
-            </div>
-        </div>` : ''}
-
-        <!-- Charts Section -->
+        <!-- Charts Section (Reorganized) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            <!-- Slot 1: Composition OR Subject Bar Chart -->
+            <!-- Slot 1: Category Breakdown (NEW) -->
             <div class="glass-card rounded-3xl p-8">
-                ${hasParts ? `
-                    <h3 class="text-xl font-bold text-white mb-2">Assessment Composition</h3>
-                    <p class="text-sm text-slate-400 mb-6 w-3/4">Comparing ${student.name}'s performance in multiple-choice reasoning versus expressive writing.</p>
-                    <div class="chart-container">
-                        <canvas id="compositionChart"></canvas>
-                    </div>
-                ` : `
-                    <h3 class="text-xl font-bold text-white mb-2">Subject-Wise Scoring Breakdown</h3>
-                    <p class="text-sm text-slate-400 mb-6 w-3/4">Direct percentage comparison across all subjects.</p>
-                    <div class="chart-container">
-                        <canvas id="subjectBarChart"></canvas>
-                    </div>
-                `}
+                <h3 class="text-xl font-bold text-white mb-2">Category Performance</h3>
+                <p class="text-sm text-slate-400 mb-6">Performance breakdown by assessment category.</p>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
             </div>
 
             <!-- Slot 2: Subject Mastery Map (Radar) -->
@@ -237,6 +245,15 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
                 <div class="chart-container flex items-center justify-center">
                     <canvas id="radarChart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        <!-- Full Width: Subject Breakdown (Moved Down) -->
+        <div class="glass-card rounded-3xl p-8">
+            <h3 class="text-xl font-bold text-white mb-2">Subject-Wise Scoring Breakdown</h3>
+            <p class="text-sm text-slate-400 mb-6">Detailed percentage comparison across all subjects.</p>
+            <div class="chart-container-lg">
+                <canvas id="subjectBarChart"></canvas>
             </div>
         </div>
 
@@ -254,7 +271,7 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
                         <h4 class="font-bold text-emerald-400 text-lg">Key Strengths</h4>
                      </div>
                      <div class="space-y-6">
-                        ${(student.strengths || ['Exceptional IT Recall: Scored 10/10. Correctly identified CPU types.', 'General Awareness: 87% in GK.', 'Mathematical Logic: 80% with strong geometry skills.']).map(s => {
+                        ${(student.strengths || ['Exceptional IT Recall: Scored 10/10.', 'General Awareness: 87% in GK.', 'Mathematical Logic: 80%.']).map(s => {
         const parts = s.split(':');
         const title = parts.length > 1 ? parts[0] : '';
         const desc = parts.length > 1 ? parts.slice(1).join(':') : s;
@@ -305,12 +322,20 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
     <script>
         const subjects = ${subjectNames};
         const scores = ${subjectScores};
-        const hasParts = ${hasParts};
+        const marks = ${subjectMarks};
+        const maxMarksArr = ${subjectMaxMarks};
+        const subjectColorsArr = ${subjectColors};
         
+        const categoryLabels = ${JSON.stringify(categoryLabels)};
+        const categoryScores = ${JSON.stringify(categoryScores)};
+        const categoryColorsArr = ${JSON.stringify(categoryColorsArray)};
+        const categoryMarks = ${JSON.stringify(categoryTotalMarks)};
+        const categoryMaxMarks = ${JSON.stringify(categoryTotalMaxMarks)};
+        
+        // Chart Defaults
         Chart.defaults.font.family = 'Inter';
-        Chart.defaults.color = '#94a3b8'; // Slate-400 for dark mode
+        Chart.defaults.color = '#94a3b8';
         Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
-        // Explicitly enable interactivity defaults
         Chart.defaults.interaction.mode = 'nearest';
         Chart.defaults.interaction.intersect = false;
         Chart.defaults.plugins.tooltip.enabled = true;
@@ -320,59 +345,45 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
         Chart.defaults.plugins.tooltip.borderColor = 'rgba(255, 255, 255, 0.1)';
         Chart.defaults.plugins.tooltip.borderWidth = 1;
 
-        if (hasParts && document.getElementById('compositionChart')) {
-            // 1. Composition (Blue/Orange Stacked)
-            new Chart(document.getElementById('compositionChart'), {
+        // 1. Category Chart (Bar) - Colors Matching Subject Chart
+        if (document.getElementById('categoryChart')) {
+             new Chart(document.getElementById('categoryChart'), {
                 type: 'bar',
                 data: {
-                    labels: ['${student.name}'],
-                    datasets: [
-                        { label: 'Objective', data: [${objective}], backgroundColor: '#3b82f6', barThickness: 100, borderRadius: 4 },
-                        { label: 'Subjective', data: [${subjective}], backgroundColor: '#f97316', barThickness: 100, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    hover: { mode: 'nearest', intersect: false },
-                    scales: { 
-                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                        x: { grid: { display: false } }
-                    },
-                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, color: '#94a3b8' } } },
-                    maintainAspectRatio: false
-                }
-            });
-        } else if (document.getElementById('subjectBarChart')) {
-            // 1b. Subject Bar Chart (Fallback for missing Objective/Subjective)
-            new Chart(document.getElementById('subjectBarChart'), {
-                type: 'bar',
-                data: {
-                    labels: subjects,
+                    labels: categoryLabels.length ? categoryLabels : ['General'],
                     datasets: [{
-                        label: 'Performance (%)',
-                        data: scores,
-                        backgroundColor: (ctx) => {
-                            const val = ctx.raw;
-                            if (val >= 90) return '#3b82f6'; // Blue
-                            return '#14b8a6'; // Teal
-                        },
+                        label: 'Avg Score (%)',
+                        data: categoryScores.length ? categoryScores : [0],
+                        backgroundColor: categoryColorsArr.length ? categoryColorsArr : ['#3b82f6'],
                         borderRadius: 6,
-                        barThickness: 40
+                        barThickness: 50
                     }]
                 },
                 options: {
                     indexAxis: 'x',
-                    hover: { mode: 'nearest', intersect: false },
                     scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                        x: { grid: { display: false } }
+                         y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                         x: { grid: { display: false } }
                     },
-                    plugins: { legend: { display: false } },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const m = categoryMarks[idx] || 0;
+                                    const mm = categoryMaxMarks[idx] || 0;
+                                    return m + ' / ' + mm + ' (' + context.parsed.y + '%)';
+                                }
+                            }
+                        }
+                    },
                     maintainAspectRatio: false
                 }
             });
         }
 
-        // 2. Radar (Teal)
+        // 2. Radar Chart - Shows percentage for each subject
         new Chart(document.getElementById('radarChart'), {
             type: 'radar',
             data: {
@@ -380,32 +391,77 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
                 datasets: [{
                     label: 'Score',
                     data: scores,
-                    borderColor: '#2dd4bf', // Teal 400
-                    backgroundColor: 'rgba(45, 212, 191, 0.1)', // Teal 400 / 0.1
+                    borderColor: '#2dd4bf',
+                    backgroundColor: 'rgba(45, 212, 191, 0.1)',
                     pointBackgroundColor: '#2dd4bf',
                     pointBorderColor: '#0f172a',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#2dd4bf',
                     borderWidth: 2,
                     pointRadius: 4
                 }]
             },
             options: {
-                hover: { mode: 'nearest', intersect: false },
                 scales: { 
                     r: { 
-                        suggestedMin: 0, 
-                        suggestedMax: 100, 
+                        suggestedMin: 0, suggestedMax: 100, 
                         ticks: { display: false, stepSize: 20 },
                         grid: { color: 'rgba(255, 255, 255, 0.1)' },
                         pointLabels: { font: { size: 11, weight: '600' }, color: '#94a3b8' },
                         angleLines: { color: 'rgba(255, 255, 255, 0.05)' }
                     } 
                 },
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const idx = context.dataIndex;
+                                const m = marks[idx] || 0;
+                                const mm = maxMarksArr[idx] || 0;
+                                return m + ' / ' + mm + ' (' + context.parsed.r + '%)';
+                            }
+                        }
+                    }
+                },
                 maintainAspectRatio: false
             }
         });
+
+        // 3. Subject-Wise Breakdown (Vertical Bar - Full Width, Colors Match Category)
+        if (document.getElementById('subjectBarChart')) {
+            new Chart(document.getElementById('subjectBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [{
+                        label: 'Performance (%)',
+                        data: scores,
+                        backgroundColor: subjectColorsArr, // Colors match parent category
+                        borderRadius: 6,
+                        barThickness: 50
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const m = marks[idx] || 0;
+                                    const mm = maxMarksArr[idx] || 0;
+                                    return m + ' / ' + mm + ' (' + context.parsed.y + '%)';
+                                }
+                            }
+                        }
+                    },
+                    maintainAspectRatio: false
+                }
+            });
+        }
     </script>
 </body>
 </html>`;
