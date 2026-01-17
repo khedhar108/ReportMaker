@@ -33,7 +33,7 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
         return <div className="flex items-center justify-center min-h-[400px] text-slate-400">Student not found</div>;
     }
 
-    const startDownload = () => {
+    const handleDownloadHTML = () => {
         if (!student) return;
 
         const html = generateReportHTML(student, examTitle);
@@ -70,11 +70,11 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
                 </div>
 
                 <button
-                    onClick={startDownload}
+                    onClick={handleDownloadHTML}
                     className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-white font-bold shadow-lg shadow-slate-900/20 transition-all text-sm group"
                 >
                     <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-                    Download PDF / HTML
+                    Download HTML
                 </button>
             </div>
 
@@ -83,7 +83,7 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
                 <iframe
                     ref={iframeRef}
                     title="Report Preview"
-                    className="w-full border-0 min-h-screen"
+                    className="w-full border-0 min-h-screen shadow-2xl"
                     style={{ height: '100vh' }}
                 />
             </div>

@@ -6,6 +6,16 @@ import { StudentCard } from './StudentCard';
 import { ManualEntryForm } from './ManualEntryForm';
 import { analyzeManualEntry } from '../services/manualEntryService';
 import { generateReportHTML } from '../utils/reportTemplate';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import JSZip from 'jszip';
 
 interface DashboardProps {
@@ -18,6 +28,7 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
     const { students, summary, setStudents, settings, setLoading, examTitle } = useApp();
     const [isManualEntry, setIsManualEntry] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isNewAnalysisDialogOpen, setIsNewAnalysisDialogOpen] = useState(false);
 
     if (!summary && !isManualEntry) {
         return (
@@ -31,7 +42,7 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
                         Manual Entry
                     </button>
                     <button
-                        onClick={onNewAnalysis}
+                        onClick={() => setIsNewAnalysisDialogOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white font-medium transition-colors border border-white/20"
                     >
                         <PlusCircle className="w-4 h-4" />
@@ -154,7 +165,7 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
                                 Manual Entry
                             </button>
                             <button
-                                onClick={onNewAnalysis}
+                                onClick={() => setIsNewAnalysisDialogOpen(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white font-medium transition-colors border border-white/20"
                             >
                                 <PlusCircle className="w-4 h-4" />
@@ -214,6 +225,27 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* New Analysis Confirmation Dialog */}
+            <AlertDialog open={isNewAnalysisDialogOpen} onOpenChange={setIsNewAnalysisDialogOpen}>
+                <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Start New Analysis?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-400">
+                            This will clear all current student data and reports. Your saved templates will remain, but any unsaved work in the current session will be lost.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 text-white border-none"
+                            onClick={() => { setIsNewAnalysisDialogOpen(false); onNewAnalysis(); }}
+                        >
+                            Start New Analysis
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

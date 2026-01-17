@@ -1,11 +1,29 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, X, ChevronRight, ChevronDown, Wand2, Trash2, FileJson, Layers, Lock, Users, UserPlus, ArrowLeft, ChevronLeft, ChevronRightIcon, Pencil } from "lucide-react";
+import { Plus, X, ChevronRight, ChevronDown, Wand2, Trash2, FileJson, Layers, Lock, Users, UserPlus, ArrowLeft, ChevronLeft, ChevronRightIcon, Pencil, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 
@@ -26,11 +44,20 @@ interface TemplateNode {
 interface StudentEntry {
     id: string;
     name: string;
+    fatherName: string;
     rollNo: string;
     className: string;
     customFields: { id: string; key: string; value: string }[];
     // Key = subject ID, Value = marks obtained
     marks: Record<string, string>;
+}
+
+interface SavedTemplate {
+    id: string;
+    name: string;
+    timestamp: number;
+    structure: TemplateNode[];
+    examTitle: string;
 }
 
 interface ManualEntryFormProps {
@@ -73,11 +100,56 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
 
     // Students State (Data Entries)
     const [students, setStudents] = useState<StudentEntry[]>([
-        { id: generateId(), name: '', rollNo: '', className: '', customFields: [], marks: {} }
+        { id: generateId(), name: '', fatherName: '', rollNo: '', className: '', customFields: [], marks: {} }
     ]);
     const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
 
+    // Filter/Save State
+    const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('reportMaker_templates');
+        if (saved) {
+            try {
+                setSavedTemplates(JSON.parse(saved));
+            } catch (e) {
+                console.error("Failed to parse saved templates");
+            }
+        }
+    }, []);
+
+    const saveTemplatesToStorage = (newTemplates: SavedTemplate[]) => {
+        setSavedTemplates(newTemplates);
+        localStorage.setItem('reportMaker_templates', JSON.stringify(newTemplates));
+    };
+
+
+    const confirmDeleteTemplate = () => {
+        if (templateToDelete) {
+            const newTemplates = savedTemplates.filter(t => t.id !== templateToDelete);
+            saveTemplatesToStorage(newTemplates);
+            setTemplateToDelete(null);
+        }
+    };
+
+    const confirmLoadTemplate = () => {
+        if (templateToLoad) {
+            setTemplate(templateToLoad.structure);
+            setExamTitle(templateToLoad.examTitle || '');
+            setIsTemplateLoaded(true); // Mark as loaded from saved
+            setTemplateToLoad(null);
+        }
+    };
+
     const [previewMode, setPreviewMode] = useState(false);
+
+    // Dialog States
+    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const [templateNameInput, setTemplateNameInput] = useState('');
+    const [alertMessage, setAlertMessage] = useState<string | null>(null);
+    const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+    const [templateToLoad, setTemplateToLoad] = useState<SavedTemplate | null>(null);
+    const [isTemplateLoaded, setIsTemplateLoaded] = useState(false);
 
     // --- Derived State ---
     const currentStudent = students[currentStudentIndex];
@@ -183,7 +255,7 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
     };
 
     const addNewStudent = () => {
-        const newStudent: StudentEntry = { id: generateId(), name: '', rollNo: '', className: '', customFields: [], marks: {} };
+        const newStudent: StudentEntry = { id: generateId(), name: '', fatherName: '', rollNo: '', className: '', customFields: [], marks: {} };
         setStudents(prev => [...prev, newStudent]);
         setCurrentStudentIndex(students.length); // Navigate to the new student
     };
@@ -200,11 +272,42 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
 
     const lockTemplate = () => {
         if (allSubjects.length === 0) {
-            alert('Please add at least one subject to the template before proceeding.');
+            setAlertMessage('Please add at least one subject to the template before proceeding.');
             return;
         }
+
+        // If template was loaded from saved, skip save dialog and go directly to entry mode
+        if (isTemplateLoaded) {
+            setMode('entry');
+            return;
+        }
+
+        // Open Save Dialog for new templates
+        setTemplateNameInput(examTitle || '');
+        setIsSaveDialogOpen(true);
+    };
+
+    const handleSaveAndLock = () => {
+        const nameToSave = templateNameInput.trim() || examTitle || "Untitled Template";
+        const newTemplate: SavedTemplate = {
+            id: generateId(),
+            name: nameToSave,
+            timestamp: Date.now(),
+            structure: template,
+            examTitle: examTitle
+        };
+        saveTemplatesToStorage([...savedTemplates, newTemplate]);
+
+        setIsSaveDialogOpen(false);
         setMode('entry');
     };
+
+    const handleSkipAndLock = () => {
+        setIsSaveDialogOpen(false);
+        setMode('entry');
+    };
+
+
 
     const editTemplate = () => {
         setMode('template');
@@ -254,6 +357,7 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
             return {
                 studentProfile: {
                     name: student.name,
+                    "Father Name": student.fatherName,
                     rollNo: student.rollNo,
                     Class: student.className,
                     ...student.customFields.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {})
@@ -422,9 +526,47 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
                                 </CardHeader>
                                 <CardContent className="text-sm text-slate-300">
                                     <p>Define the structure of your report card here. Add categories (like "Scholastic Areas") and subjects under them.</p>
-                                    <p className="mt-2 text-slate-400">Once locked, you can enter marks for multiple students using this structure.</p>
+                                    <p className="mt-2 text-slate-400">Once locked, you will be prompted to save this template for future use.</p>
                                 </CardContent>
                             </Card>
+
+                            {/* Saved Templates List */}
+                            {savedTemplates.length > 0 && (
+                                <Card className="bg-white/5 border-white/10 shadow-lg max-h-[400px] overflow-hidden flex flex-col">
+                                    <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
+                                        <CardTitle className="text-sm text-slate-300 flex items-center gap-2 uppercase tracking-wider font-bold">
+                                            <Save className="w-4 h-4 text-purple-400" /> Saved Templates
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-0 overflow-y-auto flex-1">
+                                        <div className="divide-y divide-white/5">
+                                            {savedTemplates.map(t => (
+                                                <div key={t.id} className="p-3 hover:bg-white/5 transition-colors group flex items-start gap-3">
+                                                    <div
+                                                        onClick={() => setTemplateToLoad(t)}
+                                                        className="flex-1 cursor-pointer"
+                                                    >
+                                                        <h4 className="text-sm font-medium text-purple-200 group-hover:text-purple-100 mb-0.5">{t.name}</h4>
+                                                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                            <span>{new Date(t.timestamp).toLocaleDateString()}</span>
+                                                            <span>•</span>
+                                                            <span>{t.examTitle || 'No Title'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-7 w-7 text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                        onClick={() => setTemplateToDelete(t.id)}
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             {previewMode && (
                                 <Card className="bg-black/40 border-white/10 text-slate-300 overflow-hidden backdrop-blur-md">
@@ -540,9 +682,15 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
                                     <CardDescription className="text-slate-400">Details for {currentStudent?.name || `Student ${currentStudentIndex + 1}`}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4 pt-5">
-                                    <div className="space-y-2">
-                                        <Label className="text-slate-300">Student Name</Label>
-                                        <Input placeholder="e.g. John Doe" value={currentStudent?.name || ''} onChange={(e) => updateCurrentStudent('name', e.target.value)} className="bg-slate-900/50 border-white/10 text-white" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-300">Student Name</Label>
+                                            <Input placeholder="e.g. John Doe" value={currentStudent?.name || ''} onChange={(e) => updateCurrentStudent('name', e.target.value)} className="bg-slate-900/50 border-white/10 text-white" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-300">Father's Name</Label>
+                                            <Input placeholder="e.g. Robert Doe" value={currentStudent?.fatherName || ''} onChange={(e) => updateCurrentStudent('fatherName', e.target.value)} className="bg-slate-900/50 border-white/10 text-white" />
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-2">
@@ -621,8 +769,23 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
                                                                     <div className="flex items-center bg-slate-800 rounded-md border border-white/10 overflow-hidden shrink-0">
                                                                         <Input
                                                                             value={currentStudent?.marks[node.id] || ''}
-                                                                            onChange={(e) => updateStudentMark(node.id, e.target.value)}
-                                                                            className="h-9 w-16 text-center border-none bg-transparent text-white focus-visible:ring-0"
+                                                                            onChange={(e) => {
+                                                                                const val = e.target.value;
+                                                                                const max = node.maxMarks === 'Grade' ? null : Number(node.maxMarks);
+
+                                                                                // Validation: If it's a number, ensure it doesn't exceed maxMarks
+                                                                                if (max !== null && val !== '' && !isNaN(Number(val))) {
+                                                                                    if (Number(val) > max) {
+                                                                                        // Prevent update or show error? The user said "not be possible", so we block.
+                                                                                        return;
+                                                                                    }
+                                                                                }
+                                                                                updateStudentMark(node.id, val);
+                                                                            }}
+                                                                            className={cn(
+                                                                                "h-9 w-16 text-center border-none bg-transparent text-white focus-visible:ring-0",
+                                                                                // Visual cue if accidentally invalid (though blocked)
+                                                                            )}
                                                                             placeholder="—"
                                                                         />
                                                                         <span className="text-slate-500 text-xs px-2 border-l border-white/10">/ {node.maxMarks}</span>
@@ -676,6 +839,85 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
                         </div>
                     </motion.div>
                 )}
+                {/* Save Template Dialog */}
+                <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                    <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Save Template</DialogTitle>
+                            <DialogDescription className="text-slate-400">
+                                Would you like to save this template structure for future use?
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <Label htmlFor="templateName" className="text-slate-300 mb-2 block">Template Name</Label>
+                            <Input
+                                id="templateName"
+                                value={templateNameInput}
+                                onChange={(e) => setTemplateNameInput(e.target.value)}
+                                placeholder="e.g., Term 1 Report card"
+                                className="bg-slate-950 border-white/10 text-white"
+                            />
+                        </div>
+                        <DialogFooter className="flex gap-2 sm:justify-between">
+                            <Button variant="ghost" onClick={handleSkipAndLock} className="text-slate-400 hover:text-white hover:bg-white/10">
+                                Don't Save
+                            </Button>
+                            <Button onClick={handleSaveAndLock} className="bg-purple-600 hover:bg-purple-700 text-white">
+                                Save & Continue
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Generic Alert Dialog */}
+                <Dialog open={!!alertMessage} onOpenChange={(open) => !open && setAlertMessage(null)}>
+                    <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-red-400 flex items-center gap-2">
+                                Note
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-300 pt-2">
+                                {alertMessage}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button onClick={() => setAlertMessage(null)} className="bg-white/10 hover:bg-white/20 text-white">
+                                Close
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                {/* Delete Confirmation Alert */}
+                <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+                    <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-400">
+                                This action cannot be undone. This will permanently delete the saved template.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white" onClick={() => setTemplateToDelete(null)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white border-none" onClick={confirmDeleteTemplate}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Load Confirmation Alert */}
+                <AlertDialog open={!!templateToLoad} onOpenChange={(open) => !open && setTemplateToLoad(null)}>
+                    <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Load Template?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-400">
+                                Loading this template will overwrite any unsaved changes in your current template structure.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white" onClick={() => setTemplateToLoad(null)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction className="bg-purple-600 hover:bg-purple-700 text-white border-none" onClick={confirmLoadTemplate}>Load Template</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </AnimatePresence>
         </div>
     );

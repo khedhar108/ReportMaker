@@ -66,7 +66,7 @@ An array of student objects. Each object has:
     - \`score\`: PERCENTAGE calculated as (marks / maxMarks) * 100, rounded to 1 decimal. MUST be 0-100.
 3.  **Calculate Total Score**: (Sum of all marks / Sum of all maxMarks) * 100. Round to 1 decimal. MUST be 0-100.
 4.  **Assign Grade**: A >= 75%, B >= 60%, C >= 45%, D < 45%.
-5.  **Generate Remarks**: A 2-3 line constructive summary.
+5.  **Generate Remarks**: A comprehensive 4-5 line performance analysis. Focus on a qualitative assessment of subject proficiency (e.g., "demonstrates mastery in Mathematics", "shows strong conceptual understanding in Science"). DO NOT cite specific raw marks in this summary. Adopt a CRISP, professional, and constructive tone. Highlight performance patterns across different categories and suggest general areas for development.
 6.  **Generate Strengths**: 1-2 detailed sentences.
 7.  **Generate Growth Plan**: 1-2 actionable recommendations.
 
