@@ -41,21 +41,15 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
     let motivationalEmoji = '🙂';
     let motivationalText = 'Keep Smiling & Growing!';
     let gradientClass = 'from-slate-400 to-slate-500';
-    let badgeBg = 'bg-slate-100';
-    let badgeText = 'text-slate-600';
 
     if (numPercentage >= 60) {
         motivationalEmoji = '🏆';
         motivationalText = 'Absolute Champion!';
         gradientClass = 'from-amber-400 to-orange-500';
-        badgeBg = 'bg-amber-50';
-        badgeText = 'text-amber-700';
     } else if (numPercentage >= 40) {
         motivationalEmoji = '🌟';
         motivationalText = 'Rising Star!';
         gradientClass = 'from-purple-400 to-pink-500';
-        badgeBg = 'bg-purple-50';
-        badgeText = 'text-purple-700';
     }
 
     // Custom Attributes Badges HTML (Light theme)
