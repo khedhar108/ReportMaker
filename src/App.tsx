@@ -7,6 +7,7 @@ import { Dashboard } from './components/Dashboard';
 import { ReportView } from './components/ReportView';
 import { SettingsModal } from './components/SettingsModal';
 import { DataReviewModal } from './components/DataReviewModal';
+import { DeveloperCredit } from './components/DeveloperCredit';
 
 type View = 'upload' | 'review' | 'dashboard' | 'report';
 
@@ -217,6 +218,9 @@ function AppContent() {
 
       {/* Settings Modal */}
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+      {/* Developer Credit */}
+      <DeveloperCredit />
     </div>
   );
 }
