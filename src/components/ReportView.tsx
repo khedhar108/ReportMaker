@@ -10,14 +10,17 @@ interface ReportViewProps {
 }
 
 export function ReportView({ rollNo, onBack }: ReportViewProps) {
-    const { students, examTitle } = useApp();
+    const { students, examTitle, reportHeader, reportFooter } = useApp();
     const student = students.find((s) => s.rollNo === rollNo);
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
         if (!student || !iframeRef.current) return;
 
-        const html = generateReportHTML(student, examTitle);
+        const html = generateReportHTML(student, examTitle, {
+            headerImage: reportHeader.imageData,
+            footerText: reportFooter.text
+        });
         const iframe = iframeRef.current;
 
         // Write HTML directly to iframe
@@ -27,7 +30,7 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
             doc.write(html);
             doc.close();
         }
-    }, [student, examTitle]);
+    }, [student, examTitle, reportHeader, reportFooter]);
 
     if (!student) {
         return <div className="flex items-center justify-center min-h-[400px] text-slate-400">Student not found</div>;
@@ -36,7 +39,10 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
     const handleDownloadHTML = () => {
         if (!student) return;
 
-        const html = generateReportHTML(student, examTitle);
+        const html = generateReportHTML(student, examTitle, {
+            headerImage: reportHeader.imageData,
+            footerText: reportFooter.text
+        });
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

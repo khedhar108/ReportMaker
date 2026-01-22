@@ -1,43 +1,62 @@
 import type { StudentData } from "../context/AppContext";
 
-export function generateReportHTML(student: StudentData, examTitle: string = 'Talent Hunt Examination 2026'): string {
+export function generateReportHTML(
+    student: StudentData,
+    examTitle: string = 'Talent Hunt Examination 2026',
+    options?: { headerImage?: string | null; footerText?: string }
+): string {
     // --- Color Palette for Categories (Vibrant for print) ---
     const CATEGORY_COLORS = ['#3b82f6', '#f97316', '#a855f7', '#10b981', '#ef4444', '#eab308'];
 
-    // --- Aggregation Logic for Categories (with Color Mapping) ---
+    // --- Filter Numeric vs Graded Subjects ---
+    const numericSubjects = student.subjects.filter(s => s.maxMarks !== 'Grade');
+    // We still want all subjects in the table, but only numeric ones in charts/totals.
+
+    // --- Aggregation Logic for Categories (Numeric Only) ---
     const categories: Record<string, { totalScore: number; totalMarks: number; totalMaxMarks: number; count: number; color: string }> = {};
     let colorIndex = 0;
+
+    // Process ALL subjects for category keys, but only aggregations for numeric ones
     student.subjects.forEach(s => {
         const cat = s.category || 'General';
         if (!categories[cat]) {
             categories[cat] = { totalScore: 0, totalMarks: 0, totalMaxMarks: 0, count: 0, color: CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length] };
             colorIndex++;
         }
-        categories[cat].totalScore += Number(s.score) || 0;
-        categories[cat].totalMarks += Number(s.marks) || 0;
-        categories[cat].totalMaxMarks += Number(s.maxMarks) || 0;
-        categories[cat].count += 1;
+
+        if (s.maxMarks !== 'Grade') {
+            categories[cat].totalScore += Number(s.score) || 0;
+            categories[cat].totalMarks += Number(s.marks) || 0;
+            categories[cat].totalMaxMarks += Number(s.maxMarks) || 0;
+            categories[cat].count += 1;
+        }
     });
 
     const categoryLabels = Object.keys(categories);
-    const categoryScores = categoryLabels.map(cat => Math.round(categories[cat].totalScore / categories[cat].count));
+    const categoryScores = categoryLabels.map(cat => categories[cat].count ? Math.round(categories[cat].totalScore / categories[cat].count) : 0);
     const categoryTotalMarks = categoryLabels.map(cat => categories[cat].totalMarks);
     const categoryTotalMaxMarks = categoryLabels.map(cat => categories[cat].totalMaxMarks);
     const categoryColorsArray = categoryLabels.map(cat => categories[cat].color);
 
-    // --- Subject Data (with Category Color Matching) ---
-    const subjectNames = JSON.stringify(student.subjects.map(s => s.name));
-    const subjectScores = JSON.stringify(student.subjects.map(s => Number(s.score) || 0));
-    const subjectMarks = JSON.stringify(student.subjects.map(s => Number(s.marks) || 0));
-    const subjectMaxMarks = JSON.stringify(student.subjects.map(s => Number(s.maxMarks) || 0));
-    const subjectColors = JSON.stringify(student.subjects.map(s => categories[s.category || 'General']?.color || '#14b8a6'));
+    // --- Subject Data for Charts (Numeric Only) ---
+    // If we want to show ALL subjects in charts, we'd need a Grade->Number scale. For now, exclude Graded subjects from charts to avoid skewing.
+    const chartSubjects = numericSubjects;
 
-    // Fallback logic for Total Score if not provided
-    const effectiveTotal = student.totalScore || 0;
-    const totalPercentage = (effectiveTotal).toFixed(1);
+    const subjectNames = JSON.stringify(chartSubjects.map(s => s.name));
+    const subjectScores = JSON.stringify(chartSubjects.map(s => Number(s.score) || 0));
+    const subjectMarks = JSON.stringify(chartSubjects.map(s => Number(s.marks) || 0));
+    const subjectMaxMarks = JSON.stringify(chartSubjects.map(s => Number(s.maxMarks) || 0));
+    const subjectColors = JSON.stringify(chartSubjects.map(s => categories[s.category || 'General']?.color || '#14b8a6'));
+
+    // Fallback logic for Total Score (Numeric Only)
+    // Recalculate based on numeric subjects to be safe
+    const totalObtained = numericSubjects.reduce((acc, s) => acc + (Number(s.marks) || 0), 0);
+    const totalMax = numericSubjects.reduce((acc, s) => acc + (Number(s.maxMarks) || 0), 0);
+    const totalPercentage = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(1) : '0.0';
     const numPercentage = Number(totalPercentage);
 
-    // Motivational Logic with Gradient Colors
+    // ... (Motivational Logic remains same) ...
+    // Motivational logic ...
     let motivationalEmoji = '🙂';
     let motivationalText = 'Keep Smiling & Growing!';
     let gradientClass = 'from-slate-400 to-slate-500';
@@ -51,6 +70,16 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
         motivationalText = 'Rising Star!';
         gradientClass = 'from-purple-400 to-pink-500';
     }
+
+    // ... (HTML Body) ...
+
+    // ... inside marksheet table rendering ...
+    /* 
+       I will replace the entire marksheet table body generation 
+    */
+
+    /* Skipping implicit parts for brevity in this thought trace, but I will include full replacement in tool call */
+
 
     // Custom Attributes Badges HTML (Light theme)
     const customAttributesHtml = student.customAttributes
@@ -101,6 +130,15 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
         .chart-container { position: relative; width: 100%; height: 300px; }
         .chart-container-lg { position: relative; width: 100%; height: 400px; }
         
+        .header-image {
+            width: 100%;
+            height: auto;
+            max-height: 150px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 2rem;
+        }
+
         @media print {
             body { background: white !important; }
             .report-card { 
@@ -113,6 +151,8 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
     </style>
 </head>
 <body class="antialiased min-h-screen py-10 px-6 font-sans">
+
+    ${options?.headerImage ? `<img src="${options.headerImage}" class="header-image w-full mb-8 h-auto" alt="Institute Header" />` : ''}
 
     <div class="max-w-5xl mx-auto space-y-8">
         
@@ -249,6 +289,80 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
             </div>
         </div>
 
+        <!-- MARKSHEET TABLE -->
+        <div class="report-card rounded-3xl overflow-hidden break-inside-avoid">
+            <div class="bg-gradient-to-r from-teal-500 to-cyan-600 p-6">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📝</span>
+                    <h3 class="text-2xl font-bold text-white">Complete Marksheet</h3>
+                </div>
+                <p class="text-sm text-white/80 mt-1">Detailed subject-wise marks breakdown</p>
+            </div>
+            
+            <div class="p-6">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-slate-200">
+                            <th class="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Subject</th>
+                            <th class="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
+                            <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Marks Obtained</th>
+                            <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Max Marks</th>
+                            <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${student.subjects.map((s) => {
+        const catColor = categories[s.category || 'General']?.color || '#64748b';
+        const isGraded = s.maxMarks === 'Grade';
+
+        return `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="py-4 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full" style="background-color: ${catColor};"></span>
+                                        <span class="font-semibold text-slate-700">${s.name}</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4">
+                                    <span class="px-2 py-1 rounded-md text-xs font-medium" style="background-color: ${catColor}20; color: ${catColor};">${s.category || 'General'}</span>
+                                </td>
+                                <td class="py-4 px-4 text-center">
+                                    <span class="font-bold text-slate-800 text-lg">${s.marks || '-'}</span>
+                                </td>
+                                <td class="py-4 px-4 text-center">
+                                    <span class="font-medium text-slate-500">${isGraded ? 'Grade' : (s.maxMarks || 0)}</span>
+                                </td>
+                                <td class="py-4 px-4 text-center">
+                                    ${isGraded ?
+                `<span class="text-slate-400 font-medium">—</span>` :
+                `<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-bold" style="background-color: ${catColor}15; color: ${catColor};">
+                                            ${s.score || 0}%
+                                        </span>`
+            }
+                                </td>
+                            </tr>`;
+    }).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-100 border-t-2 border-slate-200">
+                            <td class="py-4 px-4 font-bold text-slate-700" colspan="2">Total</td>
+                            <td class="py-4 px-4 text-center font-black text-slate-800 text-lg">
+                                ${student.subjects.reduce((sum, s) => sum + (Number(s.marks) || 0), 0)}
+                            </td>
+                            <td class="py-4 px-4 text-center font-bold text-slate-600">
+                                ${student.subjects.reduce((sum, s) => sum + (Number(s.maxMarks) || 0), 0)}
+                            </td>
+                            <td class="py-4 px-4 text-center">
+                                <span class="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-sm font-black bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm">
+                                    ${totalPercentage}%
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
         <!-- Insights -->
         <div class="report-card rounded-3xl overflow-hidden">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-8">
@@ -306,7 +420,7 @@ export function generateReportHTML(student: StudentData, examTitle: string = 'Ta
         </div>
         
         <footer class="text-center text-slate-400 text-xs py-8">
-            Generated by MG Global School AI Engine
+            ${options?.footerText || 'Generated by MG Global School AI Engine'}
         </footer>
 
     </div>
