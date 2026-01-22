@@ -47,7 +47,8 @@ export function ReportView({ rollNo, onBack }: ReportViewProps) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${student.name.replace(/\s+/g, '_')}_Report.html`;
+        const fatherPart = student.fatherName ? `_${student.fatherName.replace(/\s+/g, '_')}` : '';
+        a.download = `${student.name.replace(/\s+/g, '_')}${fatherPart}_Report.html`;
         a.click();
         URL.revokeObjectURL(url);
     };

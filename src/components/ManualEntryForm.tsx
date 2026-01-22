@@ -363,7 +363,7 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
             return {
                 studentProfile: {
                     name: student.name,
-                    "Father Name": student.fatherName,
+                    fatherName: student.fatherName,
                     rollNo: student.rollNo,
                     Class: student.className,
                     ...student.customFields.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {})
@@ -497,7 +497,7 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const maxWidth = 1200;
+                const maxWidth = 3000;
 
                 let width = img.width;
                 let height = img.height;

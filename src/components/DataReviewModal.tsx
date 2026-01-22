@@ -109,6 +109,7 @@ export function DataReviewModal({ onConfirm, onCancel }: DataReviewModalProps) {
                             <tr>
                                 <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-white/10">Roll No</th>
                                 <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-white/10 min-w-[200px]">Student Name</th>
+                                <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-white/10 min-w-[150px]">Father's Name</th>
                                 {subjectColumns.map((sub, i) => (
                                     <th key={i} className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-white/10 text-center">
                                         {sub}
@@ -133,6 +134,14 @@ export function DataReviewModal({ onConfirm, onCancel }: DataReviewModalProps) {
                                             value={student.name}
                                             onChange={(e) => handleCellChange(sIdx, 'name', e.target.value)}
                                             className="bg-transparent text-white font-medium w-full focus:outline-none focus:bg-white/10 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                    <td className="p-2">
+                                        <input
+                                            value={student.fatherName || ''}
+                                            onChange={(e) => handleCellChange(sIdx, 'fatherName', e.target.value)}
+                                            placeholder="Father's Name"
+                                            className="bg-transparent text-slate-300 w-full focus:outline-none focus:text-white focus:bg-white/10 rounded px-2 py-1"
                                         />
                                     </td>
                                     {student.subjects.map((sub, subIdx) => (

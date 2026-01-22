@@ -127,8 +127,8 @@ export function generateReportHTML(
         .identity-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         }
-        .chart-container { position: relative; width: 100%; height: 300px; }
-        .chart-container-lg { position: relative; width: 100%; height: 400px; }
+        .chart-container { position: relative; width: 100%; height: 300px; overflow: hidden; }
+        .chart-container-lg { position: relative; width: 100%; height: 400px; overflow: hidden; }
         
         .header-image {
             width: 100%;
@@ -150,11 +150,11 @@ export function generateReportHTML(
         }
     </style>
 </head>
-<body class="antialiased min-h-screen py-10 px-6 font-sans">
+<body class="antialiased min-h-screen font-sans">
 
-    ${options?.headerImage ? `<img src="${options.headerImage}" class="header-image w-full mb-8 h-auto" alt="Institute Header" />` : ''}
+    ${options?.headerImage ? `<img src="${options.headerImage}" class="header-image w-full h-auto block" alt="Institute Header" />` : ''}
 
-    <div class="max-w-5xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-4 px-10">
         
         <!-- EXAM HEADER -->
         <div class="text-center space-y-2">
@@ -172,47 +172,43 @@ export function generateReportHTML(
                 <!-- LEFT: 60% IDENTITY (Colorful Gradient Header) -->
                 <div class="w-full md:w-[60%] identity-header p-8 md:p-10 relative">
                     
-                    <div class="relative z-10 flex items-start gap-6">
-                        <!-- SVG Avatar -->
-                        <div class="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center shrink-0 text-white/80">
-                             <svg class="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                            </svg>
+                    <div class="relative z-10 space-y-4">
+                        <!-- Student Name -->
+                        <h1 class="text-4xl font-display font-black text-white tracking-tight uppercase drop-shadow-sm">${student.name}</h1>
+                        
+                        <!-- Father's Name Box -->
+                        ${student.fatherName ? `
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/25">
+                            <span class="text-[10px] font-bold text-white/70 uppercase tracking-wider">Father's Name:</span>
+                            <span class="text-base font-bold text-white uppercase tracking-wide">${student.fatherName}</span>
                         </div>
-
-                        <div class="space-y-4 w-full">
+                        ` : ''}
+                        
+                        <!-- Roll Number & Class -->
+                        <div class="flex flex-wrap items-center gap-6 text-sm font-medium text-white/90">
                             <div>
-                                <div class="flex items-center gap-3">
-                                    <h1 class="text-4xl font-display font-black text-white tracking-tight uppercase drop-shadow-sm">${student.name}</h1>
-                                    <div class="px-2 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white border border-white/30 uppercase tracking-wide">Active</div>
-                                </div>
-                                
-                                <div class="flex flex-wrap items-center gap-6 mt-3 text-sm font-medium text-white/90">
-                                    <div>
-                                        <span class="block text-[10px] text-white/60 uppercase tracking-wider font-bold mb-0.5">Roll Number</span>
-                                        <span class="font-mono text-white text-lg font-bold">${student.rollNo}</span>
-                                    </div>
-                                    <div class="w-px h-8 bg-white/20"></div>
-                                    <div>
-                                        <span class="block text-[10px] text-white/60 uppercase tracking-wider font-bold mb-0.5">Class</span>
-                                        <span class="font-mono text-white text-lg font-bold">${student.className || 'N/A'}</span>
-                                    </div>
-                                </div>
+                                <span class="block text-[10px] text-white/60 uppercase tracking-wider font-bold mb-0.5">Roll Number</span>
+                                <span class="font-mono text-white text-lg font-bold">${student.rollNo}</span>
                             </div>
-
-                            <!-- Custom Attributes Badges (New Area) -->
-                            ${customAttributesHtml ? `
-                            <div class="flex flex-wrap gap-2 pt-3 border-t border-white/20">
-                                ${student.customAttributes ? Object.entries(student.customAttributes).map(([key, value]) => `
-                                    <div class="px-3 py-1.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center gap-2">
-                                        <span class="text-[10px] font-bold text-white/70 uppercase tracking-wider">${key}</span>
-                                        <span class="text-sm font-bold text-white">${value}</span>
-                                    </div>
-                                `).join('') : ''}
+                            <div class="w-px h-8 bg-white/20"></div>
+                            <div>
+                                <span class="block text-[10px] text-white/60 uppercase tracking-wider font-bold mb-0.5">Class</span>
+                                <span class="font-mono text-white text-lg font-bold">${student.className || 'N/A'}</span>
                             </div>
-                            ` : ''}
-
                         </div>
+
+                        <!-- Custom Attributes Badges -->
+                        ${customAttributesHtml ? `
+                        <div class="flex flex-wrap gap-2 pt-3 border-t border-white/20">
+                            ${student.customAttributes ? Object.entries(student.customAttributes).map(([key, value]) => `
+                                <div class="px-3 py-1.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center gap-2">
+                                    <span class="text-[10px] font-bold text-white/70 uppercase tracking-wider">${key}</span>
+                                    <span class="text-sm font-bold text-white">${value}</span>
+                                </div>
+                            `).join('') : ''}
+                        </div>
+                        ` : ''}
+
                     </div>
                 </div>
 
@@ -258,21 +254,21 @@ export function generateReportHTML(
         </div>
 
         <!-- Charts Section (Reorganized) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 overflow-hidden">
             
             <!-- Slot 1: Category Breakdown (NEW) -->
-            <div class="report-card rounded-3xl p-8">
+            <div class="report-card rounded-3xl p-6 min-w-0">
                 <h3 class="text-xl font-bold text-slate-800 mb-2">Category Performance</h3>
-                <p class="text-sm text-slate-500 mb-6">Performance breakdown by assessment category.</p>
+                <p class="text-sm text-slate-500 mb-4">Performance breakdown by assessment category.</p>
                 <div class="chart-container">
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
 
             <!-- Slot 2: Subject Mastery Map (Radar) -->
-            <div class="report-card rounded-3xl p-8">
+            <div class="report-card rounded-3xl p-6 min-w-0">
                 <h3 class="text-xl font-bold text-slate-800 mb-2">Subject Mastery Map</h3>
-                <p class="text-sm text-slate-500 mb-6">Subject proficiency profile.</p>
+                <p class="text-sm text-slate-500 mb-4">Subject proficiency profile.</p>
                 
                 <div class="chart-container flex items-center justify-center">
                     <canvas id="radarChart"></canvas>
@@ -280,7 +276,7 @@ export function generateReportHTML(
             </div>
         </div>
 
-        <!-- Full Width: Subject Breakdown (Moved Down) -->
+        <!-- Full Width: Subject Breakdown (COMMENTED OUT - Redundant with Marksheet)
         <div class="report-card rounded-3xl p-8">
             <h3 class="text-xl font-bold text-slate-800 mb-2">Subject-Wise Scoring Breakdown</h3>
             <p class="text-sm text-slate-500 mb-6">Detailed percentage comparison across all subjects.</p>
@@ -288,6 +284,7 @@ export function generateReportHTML(
                 <canvas id="subjectBarChart"></canvas>
             </div>
         </div>
+        -->
 
         <!-- MARKSHEET TABLE -->
         <div class="report-card rounded-3xl overflow-hidden break-inside-avoid">

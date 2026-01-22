@@ -106,7 +106,8 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
         // Generate HTML for each student with custom exam title
         students.forEach(student => {
             const html = generateReportHTML(student, examTitle);
-            const fileName = `${student.name.replace(/\s+/g, '_')}_Report.html`;
+            const fatherPart = student.fatherName ? `_${student.fatherName.replace(/\s+/g, '_')}` : '';
+            const fileName = `${student.name.replace(/\s+/g, '_')}${fatherPart}_Report.html`;
             zip.file(fileName, html);
         });
 

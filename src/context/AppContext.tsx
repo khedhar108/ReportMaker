@@ -8,6 +8,7 @@ export interface Settings {
 export interface StudentData {
     rollNo: string;
     name: string;
+    fatherName?: string;
     grade: string;
     className?: string;
     customAttributes?: Record<string, string>;

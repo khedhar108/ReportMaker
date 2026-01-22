@@ -19,6 +19,7 @@ export interface AnalysisResult {
     students: {
         rollNo: string;
         name: string;
+        fatherName?: string;
         className?: string;
         grade: string;
         totalScore: number;
@@ -51,11 +52,12 @@ An array of flat JSON objects. Each object represents a student row from a sprea
 
 **PHASE 1: KEY INTERPRETATION**
 1.  **Identify Student Info**: Look for keys containing "Name", "Roll", "Class", "Student".
-2.  **Identify Subjects**: All other keys are likely subjects.
-3.  **Extract Max Marks from Keys**: If a key contains a number in parentheses, that's the max marks.
+2.  **Identify Father/Parent Info**: Look for keys containing "Father", "Parent", "Guardian". Extract this as "fatherName".
+3.  **Identify Subjects**: All other keys are likely subjects.
+4.  **Extract Max Marks from Keys**: If a key contains a number in parentheses, that's the max marks.
     - "English (50)" → Subject: "English", Max Marks: 50.
     - "Part A - Grammar (20)" → Subject: "Grammar", Max Marks: 20, from "Objective" section (if "Part A" implies Objective).
-4.  **Detect Objective/Subjective**: If keys contain "Objective", "Part A", "MCQ", map those subjects. If keys contain "Subjective", "Part B", "Descriptive", map those.
+5.  **Detect Objective/Subjective**: If keys contain "Objective", "Part A", "MCQ", map those subjects. If keys contain "Subjective", "Part B", "Descriptive", map those.
 
 **PHASE 2: SCORE CALCULATION**
 1.  **Percentage**: (obtained / maxMarks) * 100. If maxMarks is not found in key, assume 100.
@@ -79,6 +81,7 @@ ${context ? `\n**TEACHER'S CONTEXT (Use for additional guidance):**\n"${context}
     {
       "rollNo": string,
       "name": string,
+      "fatherName": string (optional, extract if present),
       "className": string (e.g. "10th", "Grade 5", or "N/A" if not found),
       "grade": string,
       "totalScore": number,
