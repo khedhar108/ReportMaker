@@ -180,7 +180,7 @@ export function generateReportHTML(
                         ${student.fatherName ? `
                         <div class="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/25">
                             <span class="text-[10px] font-bold text-white/70 tracking-wider">Father's Name:</span>
-                            <span class="text-base font-bold text-white uppercase tracking-wide">${student.fatherName}</span>
+                            <span class="text-base font-bold text-white tracking-wide">${student.fatherName}</span>
                         </div>
                         ` : ''}
                         
