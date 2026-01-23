@@ -5,6 +5,11 @@ export function generateReportHTML(
     examTitle: string = 'Talent Hunt Examination 2026',
     options?: { headerImage?: string | null; footerText?: string }
 ): string {
+    console.debug('[reportTemplate] generateReportHTML input', {
+        name: student?.name,
+        fatherName: student?.fatherName,
+        customAttributes: student?.customAttributes,
+    });
     // --- Color Palette for Categories (Vibrant for print) ---
     const CATEGORY_COLORS = ['#3b82f6', '#f97316', '#a855f7', '#10b981', '#ef4444', '#eab308'];
 
@@ -81,9 +86,11 @@ export function generateReportHTML(
     /* Skipping implicit parts for brevity in this thought trace, but I will include full replacement in tool call */
 
 
-    // Custom Attributes Badges HTML (Light theme)
+    // Custom Attributes Badges HTML (Light theme) - Exclude fatherName since it has its own display
     const customAttributesHtml = student.customAttributes
-        ? Object.entries(student.customAttributes).map(([key, value]) => `
+        ? Object.entries(student.customAttributes)
+            .filter(([key]) => key.toLowerCase() !== 'fathername' && key.toLowerCase() !== 'father name' && key.toLowerCase() !== 'father\'s name')
+            .map(([key, value]) => `
             <div class="px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center gap-2">
                 <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">${key}</span>
                 <span class="text-sm font-bold text-indigo-700">${value}</span>
@@ -178,9 +185,9 @@ export function generateReportHTML(
                         
                         <!-- Father's Name Box -->
                         ${student.fatherName ? `
-                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/25">
-                            <span class="text-[10px] font-bold text-white/70 tracking-wider">Father's Name:</span>
-                            <span class="text-base font-bold text-white tracking-wide">${student.fatherName}</span>
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/25" style="text-transform: none;">
+                            <span class="text-xs font-semibold text-white/70" style="text-transform: none; letter-spacing: 0.02em;">Father's Name:</span>
+                            <span class="text-base font-bold text-white" style="text-transform: none;">${student.fatherName}</span>
                         </div>
                         ` : ''}
                         
@@ -200,7 +207,7 @@ export function generateReportHTML(
                         <!-- Custom Attributes Badges -->
                         ${customAttributesHtml ? `
                         <div class="flex flex-wrap gap-2 pt-3 border-t border-white/20">
-                            ${student.customAttributes ? Object.entries(student.customAttributes).map(([key, value]) => `
+                            ${student.customAttributes ? Object.entries(student.customAttributes).filter(([key]) => key.toLowerCase() !== 'fathername' && key.toLowerCase() !== 'father name').map(([key, value]) => `
                                 <div class="px-3 py-1.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center gap-2">
                                     <span class="text-[10px] font-bold text-white/70 uppercase tracking-wider">${key}</span>
                                     <span class="text-sm font-bold text-white">${value}</span>

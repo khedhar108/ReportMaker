@@ -29,10 +29,12 @@ export interface AnalysisResult {
     students: {
         rollNo: string;
         name: string;
+        fatherName?: string;
         className?: string;
         grade: string;
         totalScore: number;
-        subjects: { name: string; score: number; maxMarks?: number }[];
+        customAttributes?: Record<string, string>;
+        subjects: { name: string; score: number; marks?: number; maxMarks?: number; category?: string }[];
         remarks: string;
         strengths: string[];
         growthPlan: { priority: string; description: string }[];
@@ -47,6 +49,11 @@ export async function analyzeManualEntry(
     studentsData: ManualEntryStudent[]
 ): Promise<AnalysisResult> {
 
+    console.debug('[manualEntryService] analyzeManualEntry input sample', {
+        firstStudentProfile: studentsData?.[0]?.studentProfile,
+        totalStudents: studentsData?.length || 0,
+    });
+
     const systemPrompt = `You are an AI Academic Report Generator. Your input is PRE-STRUCTURED JSON data from a manual entry form.
 
 **INPUT FORMAT:**
@@ -57,7 +64,7 @@ An array of student objects. Each object has:
     - Each subject has: { name: string, marks: string|number, maxMarks: string|number }.
 
 **YOUR TASK:**
-1.  **Extract Custom Attributes**: Any unknown fields in \`studentProfile\` (excluding name, rollNo, Class) must be moved to a \`customAttributes\` object (key-value strings).
+1.  **Extract Core Fields**: The following fields are CORE and must be top-level properties: \`name\`, \`fatherName\`, \`rollNo\`, \`className\` (from Class). Any OTHER unknown fields in \`studentProfile\` should be moved to a \`customAttributes\` object (key-value strings).
 2.  **Flatten Subjects with Hierarchy**: Create a single list of subjects. For each subject, include:
     - \`name\`: Subject name
     - \`category\`: Parent category name (e.g., "Objective")
@@ -84,6 +91,7 @@ An array of student objects. Each object has:
     {
       "rollNo": string,
       "name": string,
+      "fatherName": string,
       "className": string,
       "customAttributes": { "key": "value" },
       "grade": string,
@@ -101,7 +109,8 @@ CRITICAL REMINDERS:
 - "score" in subjects MUST be a PERCENTAGE (0-100), calculated as (marks/maxMarks)*100.
 - "marks" MUST be the raw marks obtained.
 - "maxMarks" MUST be the maximum possible marks for that subject.
-- Map any extra fields in studentProfile (like Phone, Father Name) to "customAttributes".
+- "fatherName" is a CORE field - extract it directly as a top-level property, NOT inside customAttributes.
+- Map any OTHER extra fields in studentProfile (like Phone) to "customAttributes".
 - Ensure every subject object in the output has a "category" field deriving from its parent in "academicPerformance".
 
 Input Data:
@@ -143,7 +152,17 @@ ${JSON.stringify(studentsData, null, 2)}`;
     const jsonStr = content.substring(startIndex, endIndex + 1);
 
     try {
-        return JSON.parse(jsonStr);
+        const parsed = JSON.parse(jsonStr) as AnalysisResult;
+        console.debug('[manualEntryService] analyzeManualEntry output sample', {
+            firstStudent: parsed?.students?.[0]
+                ? {
+                    name: parsed.students[0].name,
+                    fatherName: parsed.students[0].fatherName,
+                    customAttributes: parsed.students[0].customAttributes,
+                }
+                : null,
+        });
+        return parsed;
     } catch (e) {
         console.error("JSON Parse Error:", e);
         console.error("Raw Content:", content);
