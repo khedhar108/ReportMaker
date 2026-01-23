@@ -151,9 +151,25 @@ export function generateReportHTML(
             .report-card { 
                 box-shadow: none;
                 border: 2px solid #cbd5e1;
+                padding: 16px !important;
+            }
+            .chart-container { 
+                height: 350px !important; 
+                overflow: hidden !important;
+            }
+            .chart-container-lg { 
+                height: 400px !important;
+                overflow: hidden !important;
             }
             .break-inside-avoid { break-inside: avoid; }
             .page-break { page-break-before: always; }
+            
+            /* Limit category chart width during print to reduce bar gaps */
+            #categoryChart {
+                max-width: 80% !important;
+                margin: 0 auto !important;
+                display: block !important;
+            }
         }
     </style>
 </head>
@@ -465,8 +481,10 @@ export function generateReportHTML(
                         label: 'Avg Score (%)',
                         data: categoryScores.length ? categoryScores : [0],
                         backgroundColor: categoryColorsArr.length ? categoryColorsArr : ['#3b82f6'],
-                        borderRadius: 8,
-                        barThickness: 50
+                        borderRadius: 4,
+                        maxBarThickness: 60,
+                        categoryPercentage: 0.95,
+                        barPercentage: 0.95
                     }]
                 },
                 options: {
