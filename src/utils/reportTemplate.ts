@@ -140,10 +140,10 @@ export function generateReportHTML(
         .header-image {
             width: 100%;
             height: auto;
-            max-height: 150px;
+            max-height: 260px;
             object-fit: contain;
             display: block;
-            margin-bottom: 2rem;
+            margin-bottom: 0px;
         }
 
         @media print {
