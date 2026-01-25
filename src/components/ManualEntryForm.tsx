@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, X, ChevronRight, ChevronDown, Wand2, Trash2, FileJson, Layers, Lock, Users, UserPlus, ArrowLeft, ChevronLeft, ChevronRightIcon, Pencil, Save, Image as ImageIcon, Type, XCircle, UploadCloud, FileSpreadsheet, RefreshCw, Check, LogOut } from "lucide-react";
+import { Plus, X, ChevronRight, ChevronDown, Wand2, Trash2, FileJson, Layers, Lock, Users, UserPlus, ArrowLeft, ChevronLeft, ChevronRightIcon, Pencil, Save, Image as ImageIcon, Type, XCircle, UploadCloud, FileSpreadsheet, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGoogleLogin } from '@react-oauth/google';
 import { exportToGoogleSheet } from '../services/googleSheetsService';
@@ -479,12 +479,7 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
                         </Button>
                     </div>
                 </div>
-
-                {isCategory && node.isOpen && node.children && (
-                    <div className="flex flex-col border-l border-white/5 ml-[19px] md:ml-[22px]">
-                        {node.children.map(child => renderTemplateNode(child, level + 1))}
-                    </div>
-                )}
+                {node.children?.map(child => renderTemplateNode(child, level + 1))}
             </div>
         );
     };
@@ -492,11 +487,11 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
 
 
     // --- Handlers: Branding ---
-    const { examTitle, setExamTitle, reportHeader, setReportHeader, reportFooter, setReportFooter, setGoogleSheetId, googleUser, googleAccessToken, setGoogleAuth } = useApp();
+    const { examTitle, setExamTitle, reportHeader, setReportHeader, reportFooter, setReportFooter, setGoogleSheetId, googleAccessToken, setGoogleAuth } = useApp();
     const [sheetId, setSheetId] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+    // const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
     // Google Login Hook
     const login = useGoogleLogin({
@@ -513,7 +508,6 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
         if (!googleAccessToken || !sheetId) return;
         setIsSyncing(true);
         try {
-            const data = formatOutput();
             // We need to flatten the subjects hierarchy for the service
             // The service expects TemplateNode[] and StudentEntry[]. 
             // 'data' has 'students' which matches StudentEntry mostly, checking marks types.
@@ -521,7 +515,6 @@ export function ManualEntryForm({ onGenerate, onCancel }: ManualEntryFormProps) 
             // @ts-ignore - The service handles the rough edges
             await exportToGoogleSheet(googleAccessToken, sheetId, template, students);
 
-            setLastSyncTime(new Date());
             alert('Docs synced successfully!');
         } catch (error: any) {
             console.error(error);
