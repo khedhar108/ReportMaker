@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Trophy, BarChart3, Download, PlusCircle, PenLine, Loader2 } from 'lucide-react';
+import { Users, Trophy, BarChart3, Download, PlusCircle, PenLine, Loader2, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { exportProcessedDataToExcel } from '../utils/excelExport';
 import { StudentCard } from './StudentCard';
 import { ManualEntryForm } from './ManualEntryForm';
 import { analyzeManualEntry } from '../services/manualEntryService';
@@ -202,13 +203,23 @@ export function Dashboard({ onViewReport, onNewAnalysis, onReview }: DashboardPr
                             <div>
                                 <div className="flex items-center justify-between mb-6">
                                     <h2 className="text-2xl font-bold text-white">Student Reports</h2>
-                                    <button
-                                        onClick={handleDownloadAll}
-                                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-white font-medium transition-colors"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download All
-                                    </button>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={handleDownloadAll}
+                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-white font-medium transition-colors shadow-lg shadow-purple-500/20"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Download All Reports
+                                        </button>
+                                        <button
+                                            onClick={() => exportProcessedDataToExcel(students, `Final_Student_Data_${new Date().toISOString().slice(0, 10)}.xlsx`)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white font-medium transition-colors border border-white/10"
+                                            title="Download Source Data"
+                                        >
+                                            <FileSpreadsheet className="w-4 h-4 text-green-400" />
+                                            Export Excel
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

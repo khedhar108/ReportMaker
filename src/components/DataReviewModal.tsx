@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, AlertTriangle, Save, Edit2 } from 'lucide-react';
+import { X, AlertTriangle, Save, Edit2, FileSpreadsheet, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { exportProcessedDataToExcel } from '../utils/excelExport';
 import type { StudentData } from '../context/AppContext';
 
 interface DataReviewModalProps {
@@ -9,13 +10,21 @@ interface DataReviewModalProps {
     onCancel: () => void;
 }
 
+import { calculateStudentTotalPercentage } from '../utils/scoreUtils';
+
+// ... (existing imports)
+
 export function DataReviewModal({ onConfirm, onCancel }: DataReviewModalProps) {
-    const { students, setStudents } = useApp();
+    const { students, setStudents, googleSheetId } = useApp();
     const [editedStudents, setEditedStudents] = useState<StudentData[]>([]);
 
     useEffect(() => {
-        // Deep copy to avoid mutating context directly during edits
-        setEditedStudents(JSON.parse(JSON.stringify(students)));
+        // Deep copy and Recalculate Initial Scores to fix potential mismatches
+        const initialLoad = JSON.parse(JSON.stringify(students)).map((s: StudentData) => ({
+            ...s,
+            totalScore: calculateStudentTotalPercentage(s.subjects)
+        }));
+        setEditedStudents(initialLoad);
     }, [students]);
 
     const handleCellChange = (index: number, field: string, value: any) => {
@@ -36,25 +45,26 @@ export function DataReviewModal({ onConfirm, onCancel }: DataReviewModalProps) {
         const updated = [...editedStudents];
         updated[studentIndex].subjects[subjectIndex].score = Number(newScore) || 0;
 
-        // Auto-recalculate Total Score
-        const newTotal = updated[studentIndex].subjects.reduce((sum, sub) => sum + (Number(sub.score) || 0), 0);
-        updated[studentIndex].totalScore = newTotal;
+        // Auto-recalculate Total Score ACCURATELY
+        updated[studentIndex].totalScore = calculateStudentTotalPercentage(updated[studentIndex].subjects);
 
         setEditedStudents(updated);
     };
 
     const handleSave = () => {
-        // Validation could go here
+        // Recalculate one last time to be safe before saving
+        const finalStudents = editedStudents.map(s => ({
+            ...s,
+            totalScore: calculateStudentTotalPercentage(s.subjects)
+        }));
 
-        // Calculate class summary stats if needed (but Dashboard does this dynamically)
-        // Just update the students list
         const newSummary = {
-            totalStudents: editedStudents.length,
-            avgScore: editedStudents.reduce((acc, s) => acc + s.totalScore, 0) / editedStudents.length,
-            topPerformer: editedStudents.reduce((prev, current) => (prev.totalScore > current.totalScore) ? prev : current).name
+            totalStudents: finalStudents.length,
+            avgScore: finalStudents.reduce((acc, s) => acc + s.totalScore, 0) / finalStudents.length,
+            topPerformer: finalStudents.reduce((prev, current) => (prev.totalScore > current.totalScore) ? prev : current).name
         };
 
-        setStudents(editedStudents, newSummary);
+        setStudents(finalStudents, newSummary);
         onConfirm();
     };
 
@@ -83,6 +93,19 @@ export function DataReviewModal({ onConfirm, onCancel }: DataReviewModalProps) {
                         <p className="text-slate-400 text-sm mt-1">
                             AI extraction is powerful but not perfect. Please review marks before generating reports.
                         </p>
+                        {googleSheetId && (
+                            <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-lg w-fit">
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-green-400" />
+                                <span className="text-green-300 text-xs font-mono">
+                                    Syncing to Sheet: {googleSheetId.substring(0, 8)}...
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg w-fit">
+                            <span className="text-purple-300 text-xs font-mono font-bold">
+                                % All Marks are in Percentages
+                            </span>
+                        </div>
                     </div>
                     <div className="flex gap-3">
                         <button
@@ -91,6 +114,14 @@ export function DataReviewModal({ onConfirm, onCancel }: DataReviewModalProps) {
                         >
                             <X className="w-4 h-4" />
                             Cancel
+                        </button>
+                        <button
+                            onClick={() => exportProcessedDataToExcel(editedStudents, 'Verified_Student_Data.xlsx')}
+                            className="px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 border border-white/10"
+                            title="Download Verified Data"
+                        >
+                            <Download className="w-4 h-4" />
+                            Excel
                         </button>
                         <button
                             onClick={handleSave}
