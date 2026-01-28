@@ -163,13 +163,7 @@ export function generateReportHTML(
             }
             .break-inside-avoid { break-inside: avoid; }
             .page-break { page-break-before: always; }
-            
-            /* Limit category chart width during print to reduce bar gaps */
-            #categoryChart {
-                max-width: 80% !important;
-                margin: 0 auto !important;
-                display: block !important;
-            }
+
         }
     </style>
 </head>
@@ -279,12 +273,112 @@ export function generateReportHTML(
         <!-- Charts Section (Reorganized) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 overflow-hidden">
             
-            <!-- Slot 1: Category Breakdown (NEW) -->
+            <!-- Slot 1: School Programs (NEW - Replaces Category Chart) -->
             <div class="report-card rounded-3xl p-6 min-w-0">
-                <h3 class="text-xl font-bold text-slate-800 mb-2">Category Performance</h3>
-                <p class="text-sm text-slate-500 mb-4">Performance breakdown by assessment category.</p>
-                <div class="chart-container">
-                    <canvas id="categoryChart"></canvas>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">🏫 MG GLOBAL SCHOOL PROGRAMS</h3>
+                <p class="text-sm text-slate-500 mb-4">Our commitment to holistic student development.</p>
+                <div class="chart-container flex flex-col justify-center gap-3">
+                    ${(() => {
+            // Define all 5 programs with inline Lucide SVG icons and relevance keys
+            const allPrograms = [
+                {
+                    id: 'growth',
+                    title: 'Personalized Growth System',
+                    description: 'Diagnostics, learning intelligence mapping, and skill-based tracking.',
+                    icon: '<svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>',
+                    color: 'purple',
+                    priority: 0
+                },
+                {
+                    id: 'english',
+                    title: 'English Communication Focus',
+                    description: 'Spoken confidence + writing strength for clear expression.',
+                    icon: '<svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
+                    color: 'blue',
+                    priority: 0
+                },
+                {
+                    id: 'concept',
+                    title: 'Concept Clarity First',
+                    description: 'Deep understanding before marks — building strong foundations.',
+                    icon: '<svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+                    color: 'amber',
+                    priority: 0
+                },
+                {
+                    id: 'skillLabs',
+                    title: 'Skill Labs & Hands-On Learning',
+                    description: 'Math, Science & Tech-based activity learning culture.',
+                    icon: '<svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>',
+                    color: 'teal',
+                    priority: 0
+                },
+                {
+                    id: 'improvement',
+                    title: '30-60-90 Day Improvement Plans',
+                    description: 'Structured, measurable academic and behavioral growth.',
+                    icon: '<svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>',
+                    color: 'rose',
+                    priority: 0
+                }
+            ];
+
+            // Calculate overall score percentage
+            const totalMarks = numericSubjects.reduce((sum, s) => sum + (Number(s.marks) || 0), 0);
+            const totalMaxMarks = numericSubjects.reduce((sum, s) => sum + (Number(s.maxMarks) || 0), 0);
+            const overallPercentage = totalMaxMarks > 0 ? (totalMarks / totalMaxMarks) * 100 : 50;
+
+            // Check for English/communication subjects
+            const englishSubjects = student.subjects.filter(s =>
+                /english|writing|communication|language/i.test(s.name)
+            );
+            const hasLowEnglish = englishSubjects.some(s => (Number(s.score) || 0) < 60);
+
+            // Check for Math/Science/Tech subjects
+            const stemSubjects = student.subjects.filter(s =>
+                /math|science|physics|chemistry|biology|computer|tech|it/i.test(s.name)
+            );
+            const hasSTEM = stemSubjects.length > 0;
+
+            // Check for subjects needing concept clarity (score < 50%)
+            const lowScoreSubjects = numericSubjects.filter(s => (Number(s.score) || 0) < 50);
+            const needsConceptClarity = lowScoreSubjects.length > 0;
+
+            // Priority-based selection logic
+            // 1. Growth System: Always relevant for diagnostic tracking
+            allPrograms.find(p => p.id === 'growth')!.priority = 3;
+
+            // 2. English Focus: High priority if English subjects exist and need improvement
+            if (englishSubjects.length > 0) {
+                allPrograms.find(p => p.id === 'english')!.priority = hasLowEnglish ? 5 : 2;
+            }
+
+            // 3. Concept Clarity: High priority if student has low scores in any subject
+            allPrograms.find(p => p.id === 'concept')!.priority = needsConceptClarity ? 4 : 1;
+
+            // 4. Skill Labs: High priority for students with STEM subjects
+            allPrograms.find(p => p.id === 'skillLabs')!.priority = hasSTEM ? 4 : 1;
+
+            // 5. Improvement Plans: High priority for lower overall performance
+            allPrograms.find(p => p.id === 'improvement')!.priority = overallPercentage < 60 ? 5 : 2;
+
+            // Sort by priority (desc) and pick top 3
+            const selectedPrograms = [...allPrograms]
+                .sort((a, b) => b.priority - a.priority)
+                .slice(0, 3);
+
+            return selectedPrograms.map(program => `
+                            <div class="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="shrink-0 w-12 h-12 rounded-lg bg-${program.color}-100 flex items-center justify-center border border-${program.color}-200">
+                                    ${program.icon}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-bold text-slate-800 text-sm mb-0.5">${program.title}</h4>
+                                    <p class="text-slate-500 text-xs leading-relaxed">${program.description}</p>
+                                </div>
+                            </div>
+                        `).join('');
+        })()}
                 </div>
             </div>
 
@@ -311,7 +405,7 @@ export function generateReportHTML(
 
         <!-- MARKSHEET TABLE -->
         <div class="report-card rounded-3xl overflow-hidden break-inside-avoid">
-            <div class="bg-gradient-to-r from-teal-500 to-cyan-600 p-6">
+            <div class="bg-slate-800 p-6">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">📝</span>
                     <h3 class="text-2xl font-bold text-white">Complete Marksheet</h3>
@@ -325,17 +419,17 @@ export function generateReportHTML(
                         <tr class="border-b-2 border-slate-200">
                             <th class="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Subject</th>
                             <th class="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
-                            <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Marks Obtained</th>
                             <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Max Marks</th>
+                            <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Marks Obtained</th>
                             <th class="py-3 px-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Percentage</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${student.subjects.map((s) => {
-        const catColor = categories[s.category || 'General']?.color || '#64748b';
-        const isGraded = s.maxMarks === 'Grade';
+            const catColor = categories[s.category || 'General']?.color || '#64748b';
+            const isGraded = s.maxMarks === 'Grade';
 
-        return `
+            return `
                             <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                                 <td class="py-4 px-4">
                                     <div class="flex items-center gap-2">
@@ -347,33 +441,33 @@ export function generateReportHTML(
                                     <span class="px-2 py-1 rounded-md text-xs font-medium" style="background-color: ${catColor}20; color: ${catColor};">${s.category || 'General'}</span>
                                 </td>
                                 <td class="py-4 px-4 text-center">
-                                    <span class="font-bold text-slate-800 text-lg">${s.marks || '-'}</span>
-                                </td>
-                                <td class="py-4 px-4 text-center">
                                     <span class="font-medium text-slate-500">${isGraded ? 'Grade' : (s.maxMarks || 0)}</span>
                                 </td>
                                 <td class="py-4 px-4 text-center">
+                                    <span class="font-bold text-slate-800 text-lg">${s.marks || '-'}</span>
+                                </td>
+                                <td class="py-4 px-4 text-center">
                                     ${isGraded ?
-                `<span class="text-slate-400 font-medium">—</span>` :
-                `<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-bold" style="background-color: ${catColor}15; color: ${catColor};">
+                    `<span class="text-slate-400 font-medium">—</span>` :
+                    `<span class="font-black text-slate-900">
                                             ${s.score || 0}%
                                         </span>`
-            }
+                }
                                 </td>
                             </tr>`;
-    }).join('')}
+        }).join('')}
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-100 border-t-2 border-slate-200">
                             <td class="py-4 px-4 font-bold text-slate-700" colspan="2">Total</td>
-                            <td class="py-4 px-4 text-center font-black text-slate-800 text-lg">
-                                ${student.subjects.reduce((sum, s) => sum + (Number(s.marks) || 0), 0)}
-                            </td>
                             <td class="py-4 px-4 text-center font-bold text-slate-600">
                                 ${student.subjects.reduce((sum, s) => sum + (Number(s.maxMarks) || 0), 0)}
                             </td>
+                            <td class="py-4 px-4 text-center font-black text-slate-800 text-lg">
+                                ${student.subjects.reduce((sum, s) => sum + (Number(s.marks) || 0), 0)}
+                            </td>
                             <td class="py-4 px-4 text-center">
-                                <span class="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-sm font-black bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm">
+                                <span class="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-sm font-black bg-slate-900 text-white shadow-sm">
                                     ${totalPercentage}%
                                 </span>
                             </td>
@@ -398,11 +492,11 @@ export function generateReportHTML(
                      </div>
                      <div class="space-y-6">
                         ${(student.strengths || ['Exceptional IT Recall: Scored 10/10.', 'General Awareness: 87% in GK.', 'Mathematical Logic: 80%.']).map(s => {
-        const parts = s.split(':');
-        const title = parts.length > 1 ? parts[0] : '';
-        const desc = parts.length > 1 ? parts.slice(1).join(':') : s;
+            const parts = s.split(':');
+            const title = parts.length > 1 ? parts[0] : '';
+            const desc = parts.length > 1 ? parts.slice(1).join(':') : s;
 
-        return `
+            return `
                             <div class="flex gap-4">
                                 <div class="w-8 h-8 rounded-md bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
                                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
@@ -412,7 +506,7 @@ export function generateReportHTML(
                                     <div class="text-slate-500 text-sm leading-relaxed">${desc}</div>
                                 </div>
                             </div>`;
-    }).join('')}
+        }).join('')}
                      </div>
                 </div>
 
@@ -424,7 +518,7 @@ export function generateReportHTML(
                      </div>
                      <div class="space-y-6">
                         ${(student.growthPlan || [{ priority: "Concept Review", description: "Review core concepts" }]).map(g =>
-        `<div class="flex gap-4">
+            `<div class="flex gap-4">
                                 <div class="w-8 h-8 rounded-md bg-orange-100 flex items-center justify-center shrink-0 mt-0.5 border border-orange-200">
                                     <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                                 </div>
@@ -433,7 +527,7 @@ export function generateReportHTML(
                                     <div class="text-slate-500 text-sm leading-relaxed">${g.description}</div>
                                 </div>
                             </div>`
-    ).join('')}
+        ).join('')}
                      </div>
                 </div>
             </div>
@@ -471,47 +565,8 @@ export function generateReportHTML(
         Chart.defaults.plugins.tooltip.borderColor = '#334155';
         Chart.defaults.plugins.tooltip.borderWidth = 1;
 
-        // 1. Category Chart (Bar) - Colors Matching Subject Chart
-        if (document.getElementById('categoryChart')) {
-             new Chart(document.getElementById('categoryChart'), {
-                type: 'bar',
-                data: {
-                    labels: categoryLabels.length ? categoryLabels : ['General'],
-                    datasets: [{
-                        label: 'Avg Score (%)',
-                        data: categoryScores.length ? categoryScores : [0],
-                        backgroundColor: categoryColorsArr.length ? categoryColorsArr : ['#3b82f6'],
-                        borderRadius: 4,
-                        maxBarThickness: 60,
-                        categoryPercentage: 0.95,
-                        barPercentage: 0.95
-                    }]
-                },
-                options: {
-                    indexAxis: 'x',
-                    scales: {
-                         y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' } },
-                         x: { grid: { display: false } }
-                    },
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const idx = context.dataIndex;
-                                    const m = categoryMarks[idx] || 0;
-                                    const mm = categoryMaxMarks[idx] || 0;
-                                    return m + ' / ' + mm + ' (' + context.parsed.y + '%)';
-                                }
-                            }
-                        }
-                    },
-                    maintainAspectRatio: false
-                }
-            });
-        }
 
-        // 2. Radar Chart - Shows percentage for each subject
+        // Radar Chart - Shows percentage for each subject
         new Chart(document.getElementById('radarChart'), {
             type: 'radar',
             data: {

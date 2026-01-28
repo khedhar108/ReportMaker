@@ -73,9 +73,9 @@ An array of student objects. Each object has:
     - \`score\`: PERCENTAGE calculated as (marks / maxMarks) * 100, rounded to 1 decimal. MUST be 0-100.
 3.  **Calculate Total Score**: (Sum of all marks / Sum of all maxMarks) * 100. Round to 1 decimal. MUST be 0-100.
 4.  **Assign Grade**: A >= 75%, B >= 60%, C >= 45%, D < 45%.
-5.  **Generate Remarks**: A comprehensive 4-5 line performance analysis. Focus on a qualitative assessment of subject proficiency (e.g., "demonstrates mastery in Mathematics", "shows strong conceptual understanding in Science"). DO NOT cite specific raw marks in this summary. Adopt a CRISP, professional, and constructive tone. Highlight performance patterns across different categories and suggest general areas for development.
-6.  **Generate Strengths**: 1-2 detailed sentences.
-7.  **Generate Growth Plan**: 1-2 actionable recommendations.
+5.  **Generate Remarks**: Write a comprehensive, detailed 5-6 line qualitative performance overview (minimum 5 full sentences). Focus on a holistic assessment of subject proficiency without mentioning specific numerical scores or percentages. Instead, use descriptive language (e.g., "demonstrates strong aptitude", "shows potential for improvement", "consistently excels"). Analyze performance patterns across different categories, highlight the student's learning journey, and provide constructive insights. Adopt a professional, encouraging, and analytical tone that celebrates achievements while identifying growth opportunities.
+6.  **Generate Strengths**: Provide 3-5 detailed, specific strength points. Each point should be a complete sentence that highlights a particular skill, subject mastery, or behavioral excellence with concrete observations (e.g., "Exceptional analytical thinking demonstrated through consistent high performance in Mathematics and logical reasoning tasks", "Strong written communication skills evident in English literature analysis").
+7.  **Generate Growth Plan**: Provide 3-5 actionable, specific recommendations for improvement. Each recommendation should include both the priority area and a concrete action plan (e.g., "Mathematical Problem-Solving: Practice word problems daily to strengthen application of formulae in real-world scenarios", "Time Management: Develop a study schedule allocating focused time for weaker subjects").
 
 **CRITICAL OUTPUT RULES:**
 - \`score\` in subjects array MUST ALWAYS be a percentage (0-100), NOT raw marks.
@@ -97,9 +97,9 @@ An array of student objects. Each object has:
       "grade": string,
       "totalScore": number,
       "subjects": [{ "name": string, "score": number, "marks": number, "maxMarks": number, "category": string }],
-      "remarks": string,
-      "strengths": [string],
-      "growthPlan": [{ "priority": string, "description": string }]
+      "remarks": string (4-5 comprehensive sentences),
+      "strengths": [string] (array of 3-5 detailed strength points),
+      "growthPlan": [{ "priority": string, "description": string }] (array of 3-5 specific recommendations)
     }
   ]
 }`;

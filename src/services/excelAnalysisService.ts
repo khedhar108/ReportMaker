@@ -65,8 +65,9 @@ An array of flat JSON objects. Each object represents a student row from a sprea
 3.  **Grade**: A >= 75%, B >= 60%, C >= 45%, D < 45%.
 
 **PHASE 3: GENERATE INSIGHTS**
-- Write clear, specific remarks mentioning actual subject names and performance.
-- Generate 1-2 strengths and 1-2 growth plan items per student.
+- **Remarks**: Write a comprehensive, detailed 5-6 line qualitative performance overview (minimum 5 full sentences). Focus on a holistic assessment of subject proficiency without mentioning specific numerical scores or percentages. Instead, use descriptive language (e.g., "demonstrates strong aptitude", "shows potential for improvement", "consistently excels"). Analyze performance patterns across different categories, highlight the student's learning journey, and provide constructive insights. Adopt a professional, encouraging, and analytical tone that celebrates achievements while identifying growth opportunities.
+- **Strengths**: Generate 3-5 detailed, specific strength points. Each point should be a complete sentence that highlights a particular skill, subject mastery, or behavioral excellence with concrete observations.
+- **Growth Plan**: Generate 3-5 actionable, specific recommendations for improvement. Each recommendation should include both the priority area and a concrete action plan.
 
 ${context ? `\n**TEACHER'S CONTEXT (Use for additional guidance):**\n"${context}"\n` : ''}
 
@@ -86,9 +87,9 @@ ${context ? `\n**TEACHER'S CONTEXT (Use for additional guidance):**\n"${context}
       "grade": string,
       "totalScore": number,
       "subjects": [{ "name": string (clean subject name), "score": number (percentage), "maxMarks": number }],
-      "remarks": string,
-      "strengths": [string],
-      "growthPlan": [{ "priority": string, "description": string }],
+      "remarks": string (4-5 comprehensive sentences),
+      "strengths": [string] (array of 3-5 detailed strength points),
+      "growthPlan": [{ "priority": string, "description": string }] (array of 3-5 specific recommendations),
       "objectiveScore": number (optional, sum or avg of objective subjects if detected),
       "subjectiveScore": number (optional, sum or avg of subjective subjects if detected)
     }
