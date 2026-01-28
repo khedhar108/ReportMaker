@@ -275,36 +275,38 @@ export function generateReportHTML(
             
             <!-- Slot 1: School Programs (NEW - Replaces Category Chart) -->
             <div class="report-card rounded-3xl p-6 min-w-0">
-                <h3 class="text-xl font-bold text-slate-800 mb-2">🏫 MG GLOBAL SCHOOL PROGRAMS</h3>
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="https://tinyurl.com/4c3x6bxm" alt="School Logo" class="w-20 h-20 object-contain rounded-xl bg-white p-1 border border-slate-100 shadow-sm" />
+                    <div>
+                         <h3 class="text-xl font-bold text-slate-800 leading-tight">MG GLOBAL<br/>SCHOOL PROGRAMS</h3>
+                    </div>
+                </div>
                 <p class="text-sm text-slate-500 mb-4">Our commitment to holistic student development.</p>
                 <div class="chart-container flex flex-col justify-center gap-3">
                     ${(() => {
             // Define all 5 programs with inline Lucide SVG icons and relevance keys
-            // Using a placeholder logo for now, can be updated to specific URL or base64
-            const logoSrc = '/images/school-logo.jpeg';
-
             const allPrograms = [
                 {
                     id: 'growth',
                     title: 'Personalized Growth System',
                     description: 'Diagnostics, learning intelligence mapping, and skill-based tracking.',
-                    icon: `<img src="${logoSrc}" alt="MG Logo" class="w-8 h-8 object-contain" />`,
+                    icon: '<svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>',
                     color: 'purple',
-                    priority: 0
+                    priority: 1
                 },
                 {
                     id: 'english',
                     title: 'English Communication Focus',
                     description: 'Spoken confidence + writing strength for clear expression.',
-                    icon: `<img src="${logoSrc}" alt="MG Logo" class="w-8 h-8 object-contain" />`,
+                    icon: '<svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
                     color: 'blue',
-                    priority: 0
+                    priority: 1
                 },
                 {
                     id: 'concept',
                     title: 'Concept Clarity First',
                     description: 'Deep understanding before marks — building strong foundations.',
-                    icon: `<img src="${logoSrc}" alt="MG Logo" class="w-8 h-8 object-contain" />`,
+                    icon: '<svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
                     color: 'amber',
                     priority: 0
                 },
@@ -312,7 +314,7 @@ export function generateReportHTML(
                     id: 'skillLabs',
                     title: 'Skill Labs & Hands-On Learning',
                     description: 'Math, Science & Tech-based activity learning culture.',
-                    icon: `<img src="${logoSrc}" alt="MG Logo" class="w-8 h-8 object-contain" />`,
+                    icon: '<svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>',
                     color: 'teal',
                     priority: 0
                 },
@@ -320,7 +322,7 @@ export function generateReportHTML(
                     id: 'improvement',
                     title: '30-60-90 Day Improvement Plans',
                     description: 'Structured, measurable academic and behavioral growth.',
-                    icon: `<img src="${logoSrc}" alt="MG Logo" class="w-8 h-8 object-contain" />`,
+                    icon: '<svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>',
                     color: 'rose',
                     priority: 0
                 }
