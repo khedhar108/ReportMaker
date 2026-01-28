@@ -65,7 +65,10 @@ An array of flat JSON objects. Each object represents a student row from a sprea
 3.  **Grade**: A >= 75%, B >= 60%, C >= 45%, D < 45%.
 
 **PHASE 3: GENERATE INSIGHTS**
-- **Remarks**: Write a comprehensive, detailed 3-4 line qualitative performance overview (minimum 5 full sentences). Focus on a holistic assessment of subject proficiency without mentioning specific numerical scores or percentages. Instead, use descriptive language (e.g., "demonstrates strong aptitude", "shows potential for improvement", "consistently excels"). Analyze performance patterns across different categories, highlight the student's learning journey, and provide constructive insights. Adopt a professional, encouraging, and analytical tone that celebrates achievements while identifying growth opportunities.
+- **Remarks (CRITICAL: 70/30 Rule)**: Write a comprehensive qualitative overview (minimum 5 full sentences) strictly following the **70/30 Rule**:
+    - **70% Improvement Focus**: strict alignment with the lowest-scoring subjects. First, identify the subjects where the student has the lowest percentage scores. Devote the majority of the text to these specific areas. For example, if the student scored low in English, address writing skills; if low in Science, address conceptual clarity. Do NOT make random assumptions—base every improvement point on an actual subject with lower performance data.
+    - **30% Positive Reinforcement**: Use the remaining 30% to highlight genuine strengths and high achievements.
+    - **Tone**: Diagnostic and constructive. Do not sugarcoat low performance; prioritize identifying specific areas for immediate improvement over general praise. Do not mention specific scores.
 - **Strengths**: Generate 2-4 detailed, specific strength points. Each point should be a complete sentence that highlights a particular skill, subject mastery, or behavioral excellence with concrete observations.
 - **Growth Plan**: Generate 2-4 actionable, specific recommendations for improvement. Each recommendation should include both the priority area and a concrete action plan.
 
